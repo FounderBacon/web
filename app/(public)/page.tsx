@@ -3,6 +3,22 @@ import { Countdown } from "@/components/ui/countdown"
 const TARGET_DATE = new Date("2026-04-16T00:00:00")
 const isLanding = process.env.NEXT_PUBLIC_ENABLE_LANDING === "true"
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "FounderBacon",
+  url: "https://founderbacon.com",
+  description:
+    "The first free, open REST API for Fortnite: Save the World. Every weapon, every stat, every perk, every crafting recipe.",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "All",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+}
+
 function LandingPage() {
   return (
     <div className="relative min-h-screen" style={{ background: "linear-gradient(to top right, #28253E 2%, #28253E 5%, #EAE0FF 70%, #EAE0FF 100%)" }}>
@@ -38,6 +54,13 @@ function HomePage() {
 }
 
 export default function Home() {
-  if (isLanding) return <LandingPage />
-  return <HomePage />
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      {isLanding ? <LandingPage /> : <HomePage />}
+    </>
+  )
 }
