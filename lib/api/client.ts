@@ -1,0 +1,61 @@
+import axios, { AxiosError } from "axios"
+import type { AxiosRequestConfig, InternalAxiosRequestConfig } from "axios"
+import { getToken } from "@/lib/auth"
+
+declare module "axios" {
+  interface AxiosRequestConfig {
+    skipAuth?: boolean
+  }
+}
+
+const instance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, ""),
+  headers: { "Content-Type": "application/json" },
+})
+
+instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  if (!config.skipAuth) {
+    const token = getToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  }
+  return config
+})
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = "ApiError"
+  }
+}
+
+instance.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError<{ message?: string }>) => {
+    const status = error.response?.status ?? 500
+    const message = error.response?.data?.message ?? error.message
+    throw new ApiError(status, message)
+  },
+)
+
+export const api = {
+  get<T>(url: string, config?: AxiosRequestConfig) {
+    return instance.get<T>(url, config).then((r) => r.data)
+  },
+  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return instance.post<T>(url, data, config).then((r) => r.data)
+  },
+  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return instance.put<T>(url, data, config).then((r) => r.data)
+  },
+  patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+    return instance.patch<T>(url, data, config).then((r) => r.data)
+  },
+  delete<T>(url: string, config?: AxiosRequestConfig) {
+    return instance.delete<T>(url, config).then((r) => r.data)
+  },
+}
