@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard", "/settings", "/profile"],
+        disallow: ["/*/dashboard", "/*/settings", "/*/profile"],
       },
     ],
     sitemap: "https://founderbacon.com/sitemap.xml",

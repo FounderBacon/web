@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
       "The first free, open REST API for Fortnite: Save the World.",
     start_url: "/",
     display: "standalone",
-    background_color: "#28253E",
+    background_color: "#190C27",
     theme_color: "#861AA0",
     icons: [
       {

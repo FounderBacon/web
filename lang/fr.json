@@ -1,0 +1,39 @@
+{
+  "navbar": {
+    "login": "Connexion",
+    "search": "Recherche",
+    "API": "API"
+  },
+  "footer": {
+    "tagline": "Cree par un Founder, pour la communaute.",
+    "projects": "Projets",
+    "apiDocs": "API Docs",
+    "status": "Statut",
+    "privacy": "Politique de confidentialite",
+    "social": "Social",
+    "twitter": "Twitter / X",
+    "github": "GitHub",
+    "contact": "Contact"
+  },
+  "home": {
+    "title": "FOUNDERBACON",
+    "subtitle": "SAVE THE WORLD",
+    "description": "Save the world.",
+    "heroTitle1": "CONNAIS TON",
+    "heroTitle2": "ARSENAL.",
+    "heroDescription": "Armes. Pieges. Heros. Stats. Atouts. Fabrication.\nTout au meme endroit, gratuit pour toujours.",
+    "ctaWeapons": "EXPLORER LES ARMES",
+    "ctaDocs": "VOIR LA DOC API"
+  },
+  "login": {
+    "title": "Se connecter",
+    "epicButton": "Continuer avec Epic Games"
+  },
+  "privacy": {
+    "title": "POLITIQUE DE CONFIDENTIALITE",
+    "lastUpdated": "Derniere mise a jour : 4 avril 2026"
+  },
+  "dashboard": {
+    "title": "Tableau de bord"
+  }
+}

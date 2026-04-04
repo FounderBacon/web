@@ -1,21 +1,20 @@
-"use client"
-
 import { getLoginUrl } from "@/lib/api"
+import { getDictionary, isValidLocale } from "@/lib/i18n"
 
-export default function LoginPage() {
+export default async function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  if (!isValidLocale(locale)) return null
+
+  const dict = await getDictionary(locale)
+
   return (
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
       <div className="flex w-full max-w-sm flex-col items-center gap-8 rounded-xl border border-border bg-card p-8">
         <img src="/svg/fbcn_logo.svg" alt="FounderBacon" className="size-16" />
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl text-card-foreground">
-          Se connecter
-        </h1>
-        <a
-          href={getLoginUrl()}
-          className="flex w-full items-center justify-center gap-3 rounded-md bg-[#2F2D2E] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#3D3B3C]"
-        >
+        <h1 className="font-[family-name:var(--font-heading)] text-2xl text-card-foreground">{dict.login.title}</h1>
+        <a href={getLoginUrl()} className="flex w-full items-center justify-center gap-3 rounded-md bg-[#2F2D2E] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#3D3B3C]">
           <EpicGamesIcon />
-          Continuer avec Epic Games
+          {dict.login.epicButton}
         </a>
       </div>
     </div>

@@ -1,0 +1,39 @@
+{
+  "navbar": {
+    "login": "Login",
+    "search": "Search",
+    "API": "API"
+  },
+  "footer": {
+    "tagline": "Built by a Founder, for the community.",
+    "projects": "Projects",
+    "apiDocs": "API Docs",
+    "status": "Status",
+    "privacy": "Privacy Policy",
+    "social": "Social",
+    "twitter": "Twitter / X",
+    "github": "GitHub",
+    "contact": "Contact"
+  },
+  "home": {
+    "title": "FOUNDERBACON",
+    "subtitle": "SAVE THE WORLD",
+    "description": "Save the world.",
+    "heroTitle1": "KNOW YOUR",
+    "heroTitle2": "ARSENAL.",
+    "heroDescription": "Weapons. Traps. Heroes. Stats. Perks. Crafting.\nAll in one place, free forever.",
+    "ctaWeapons": "EXPLORE WEAPONS",
+    "ctaDocs": "VIEW API DOCS"
+  },
+  "login": {
+    "title": "Sign in",
+    "epicButton": "Continue with Epic Games"
+  },
+  "privacy": {
+    "title": "PRIVACY POLICY",
+    "lastUpdated": "Last updated: April 4, 2026"
+  },
+  "dashboard": {
+    "title": "Dashboard"
+  }
+}
