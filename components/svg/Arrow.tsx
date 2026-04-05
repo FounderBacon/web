@@ -1,0 +1,12 @@
+interface ArrowProps {
+  fill?: string
+  className?: string
+}
+
+export function Arrow({ fill = "currentColor", className }: ArrowProps) {
+  return (
+    <svg width="269" height="269" viewBox="0 0 269 269" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <path d="M3.71166 128.533L-0.000564184 175.55L191.697 152.825L110.182 221.036L124.729 268.999L268.437 133.608L134.754 -5.43608e-05L107.436 36.6665L190.617 111.494L5.89062 105.989L4.10984 121.913L13.3538 125.304L3.71166 128.533Z" fill={fill} />
+    </svg>
+  )
+}

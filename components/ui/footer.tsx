@@ -3,6 +3,7 @@ import type { Locale } from "@/lib/i18n"
 import type en from "@/lang/en.json"
 import { BgFooter } from "@/components/svg/BgFooter"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 interface FooterProps {
   locale: Locale
@@ -12,8 +13,8 @@ interface FooterProps {
 export function Footer({ locale, dict }: FooterProps) {
   return (
     <footer className="mt-auto w-full h-fit">
-      <BgFooter className="block w-full -mb-px" fill="#190C27" />
-      <div className="dark flex items-center bg-king-900 px-4 py-10 md:px-10 md:h-100 md:py-0">
+      <BgFooter className="block w-full -mb-px text-king-900 dark:text-king-800" fill="currentColor" />
+      <div className="dark flex items-center bg-king-900 dark:bg-king-800 px-4 py-10 md:px-10 md:h-100 md:py-0">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 md:flex-row md:justify-between md:gap-0">
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
@@ -21,6 +22,7 @@ export function Footer({ locale, dict }: FooterProps) {
               <span className="font-burbank text-2xl text-primary-foreground mt-1">FOUNDERBACON</span>
             </div>
             <p className="text-sm text-muted-foreground">{dict.footer.tagline}</p>
+            <ThemeToggle />
           </div>
 
           <div className="flex gap-10 sm:gap-16">

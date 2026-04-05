@@ -25,6 +25,21 @@
     "ctaWeapons": "EXPLORER LES ARMES",
     "ctaDocs": "VOIR LA DOC API"
   },
+  "search": {
+    "title": "Rechercher des armes",
+    "placeholder": "Rechercher par nom...",
+    "filters": "Filtres",
+    "type": "Type",
+    "typeAll": "Tous",
+    "typeRanged": "Distance",
+    "typeMelee": "Melee",
+    "category": "Categorie",
+    "rarity": "Rarete",
+    "element": "Element",
+    "all": "Tous",
+    "noResults": "Aucune arme trouvee.",
+    "loading": "Chargement..."
+  },
   "login": {
     "title": "Se connecter",
     "epicButton": "Continuer avec Epic Games"

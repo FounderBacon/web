@@ -25,6 +25,21 @@
     "ctaWeapons": "EXPLORE WEAPONS",
     "ctaDocs": "VIEW API DOCS"
   },
+  "search": {
+    "title": "Search Weapons",
+    "placeholder": "Search by name...",
+    "filters": "Filters",
+    "type": "Type",
+    "typeAll": "All",
+    "typeRanged": "Ranged",
+    "typeMelee": "Melee",
+    "category": "Category",
+    "rarity": "Rarity",
+    "element": "Element",
+    "all": "All",
+    "noResults": "No weapons found.",
+    "loading": "Loading..."
+  },
   "login": {
     "title": "Sign in",
     "epicButton": "Continue with Epic Games"

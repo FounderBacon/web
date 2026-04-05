@@ -87,6 +87,10 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: DOMAIN,
+    languages: {
+      en: `${DOMAIN}/en`,
+      fr: `${DOMAIN}/fr`,
+    },
   },
 }
 

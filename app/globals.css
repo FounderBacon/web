@@ -57,13 +57,23 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* Palette rarity */
-  --color-common: #B4B4B4;
-  --color-uncommon: #319236;
-  --color-rare: #4C51F7;
-  --color-epic: #9D4DBB;
-  --color-legendary: #F3AF19;
-  --color-mythic: #FFD876;
+  /* Palette rarity - light */
+  --color-common: #ABB5B9;
+  --color-common-dark: #6E767A;
+  --color-uncommon: #5BBB06;
+  --color-uncommon-dark: #024B00;
+  --color-rare: #02ACFC;
+  --color-rare-dark: #083F8A;
+  --color-epic: #C953FC;
+  --color-epic-dark: #451775;
+  --color-legendary: #FF8521;
+  --color-legendary-dark: #833819;
+  --color-mythic: #E2C55B;
+  --color-mythic-dark: #837235;
+
+  /* Malus */
+  --color-malus: #E25B60;
+  --color-malus-dark: #833538;
 
   /* Dark Amethyst */
   --color-king-50: #F2EBF9;
@@ -80,7 +90,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0;
 }
 
 :root, .light {
@@ -98,7 +108,7 @@
   --muted-foreground: var(--color-king-700);
   --accent: var(--color-king-600);
   --accent-foreground: var(--color-king-50);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: #dc2626;
   --border: var(--color-king-200);
   --input: var(--color-king-200);
   --ring: var(--color-king-500);
@@ -132,7 +142,7 @@
   --muted-foreground: var(--color-king-200);
   --accent: var(--color-king-600);
   --accent-foreground: var(--color-king-50);
-  --destructive: oklch(0.704 0.191 22.216);
+  --destructive: #ef4444;
   --border: var(--color-king-700);
   --input: var(--color-king-700);
   --ring: var(--color-king-400);
