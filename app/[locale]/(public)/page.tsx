@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "The first free, open REST API for Fortnite: Save the World. Weapons, traps, heroes, stats, perks, crafting — all in one place, free forever.",
 };
 
-const TARGET_DATE = new Date("2026-04-16T00:00:00");
+const TARGET_DATE = new Date("2026-04-16T23:59:59");
 const isLanding = process.env.NEXT_PUBLIC_ENABLE_LANDING === "true";
 
 const jsonLd = {
