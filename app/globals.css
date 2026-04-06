@@ -166,3 +166,56 @@
   margin: 0 auto;
   box-sizing: border-box;
 }
+
+/* Animations du pattern décoratif de la landing */
+
+/* Push toward : translate générique paramétré via CSS variables --push-x / --push-y */
+@keyframes pattern1-push {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--push-x, 0), var(--push-y, 0), 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.pattern1-path {
+  fill: currentColor;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: pattern1-push;
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+/* Groupe 1 — Piques (push diagonal depuis l'extérieur, distance plus grande) */
+.pattern1-path--spike {
+  animation-duration: 1s;
+  animation-delay: 0s;
+}
+
+/* Groupe 2 — Cadre (3 morceaux, fade léger ensemble) */
+.pattern1-path--cadre {
+  animation-duration: 0.7s;
+  animation-delay: 0.6s;
+  /* Pas de push, juste fade-in subtil sur Y */
+  --push-y: 8px;
+}
+
+/* Groupe 3 — Bords (3 morceaux, push depuis leur bord d'ancrage ensemble) */
+.pattern1-path--bord {
+  animation-duration: 0.9s;
+  animation-delay: 1.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pattern1-path {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}

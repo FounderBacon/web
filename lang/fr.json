@@ -23,7 +23,13 @@
     "heroTitle2": "ARSENAL.",
     "heroDescription": "Armes. Pieges. Heros. Stats. Atouts. Fabrication.\nTout au meme endroit, gratuit pour toujours.",
     "ctaWeapons": "EXPLORER LES ARMES",
-    "ctaDocs": "VOIR LA DOC API"
+    "ctaDocs": "VOIR LA DOC API",
+    "countdown": {
+      "days": "j",
+      "hours": "h",
+      "minutes": "m",
+      "seconds": "s"
+    }
   },
   "search": {
     "title": "Rechercher des armes",

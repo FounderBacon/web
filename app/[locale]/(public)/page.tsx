@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SectionContainer } from "@/components/public/SectionContainer";
 import { FbcnLogo } from "@/components/svg/FbcnLogo";
+import { Pattern1, Pattern1Mobile } from "@/components/svg/Pattern1";
 import { Countdown } from "@/components/ui/countdown";
 import { getDictionary, isValidLocale } from "@/lib/i18n";
 
@@ -30,15 +31,16 @@ const jsonLd = {
 
 function LandingPage({ dict }: { dict: Awaited<ReturnType<typeof getDictionary>> }) {
   return (
-    <div className="relative min-h-screen" style={{ background: "linear-gradient(to top right, #190C27 2%, #190C27 5%, #EAE0FF 70%, #EAE0FF 100%)" }}>
-      <div className="absolute inset-0 z-10 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/svg/pattern_1.svg')" }} />
+    <div className="relative min-h-screen" style={{ background: "linear-gradient(to top right, #11081B -25%, #E5D8F3 65%)" }}>
+      <Pattern1 className="absolute inset-0 z-10 hidden h-full w-full md:block" fit="cover" />
+      <Pattern1Mobile className="absolute inset-0 z-10 block h-full w-full md:hidden" fit="cover" />
       <div className="absolute inset-0 z-20 flex items-center justify-center">
         <img src="/svg/fbcn_logo.svg" alt="" className="size-[480px] opacity-25" />
       </div>
       <div className="relative z-30 flex h-screen w-full flex-col items-center justify-center gap-4">
-        <h1 className="font-[family-name:var(--font-heading)] text-4xl text-king-900">{dict.home.title}</h1>
-        <Countdown targetDate={TARGET_DATE} className="font-[family-name:var(--font-heading)] text-6xl text-king-900" />
-        <p className="font-[family-name:var(--font-heading)] text-2xl text-king-900">{dict.home.subtitle}</p>
+        <h1 className="font-burbank uppercase text-3xl text-king-950 md:text-8xl">{dict.home.title}</h1>
+        <Countdown targetDate={TARGET_DATE} labels={dict.home.countdown} className="font-burbank uppercase text-4xl text-king-950 md:text-9xl" />
+        <p className="font-burbank uppercase text-xl text-king-950 md:text-5xl">{dict.home.subtitle}</p>
       </div>
     </div>
   );

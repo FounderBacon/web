@@ -24,12 +24,20 @@ function calculateTimeLeft(targetDate: Date): TimeLeft {
   }
 }
 
+type CountdownLabels = {
+  days: string
+  hours: string
+  minutes: string
+  seconds: string
+}
+
 type CountdownProps = {
   targetDate: Date
+  labels: CountdownLabels
   className?: string
 }
 
-export function Countdown({ targetDate, className }: CountdownProps) {
+export function Countdown({ targetDate, labels, className }: CountdownProps) {
   const [timeLeft, setTimeLeft] = React.useState<TimeLeft>(() =>
     calculateTimeLeft(targetDate)
   )
@@ -45,15 +53,19 @@ export function Countdown({ targetDate, className }: CountdownProps) {
   }, [targetDate])
 
   if (!mounted) {
-    return <div className={className}>--j --h --m --s</div>
+    return (
+      <div className={className}>
+        --{labels.days} --{labels.hours} --{labels.minutes} --{labels.seconds}
+      </div>
+    )
   }
 
   return (
     <div className={className}>
-      <span>{timeLeft.days}j </span>
-      <span>{timeLeft.hours}h </span>
-      <span>{timeLeft.minutes}m </span>
-      <span>{timeLeft.seconds}s</span>
+      <span>{timeLeft.days}{labels.days} </span>
+      <span>{timeLeft.hours}{labels.hours} </span>
+      <span>{timeLeft.minutes}{labels.minutes} </span>
+      <span>{timeLeft.seconds}{labels.seconds}</span>
     </div>
   )
 }

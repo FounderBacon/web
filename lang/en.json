@@ -23,7 +23,13 @@
     "heroTitle2": "ARSENAL.",
     "heroDescription": "Weapons. Traps. Heroes. Stats. Perks. Crafting.\nAll in one place, free forever.",
     "ctaWeapons": "EXPLORE WEAPONS",
-    "ctaDocs": "VIEW API DOCS"
+    "ctaDocs": "VIEW API DOCS",
+    "countdown": {
+      "days": "d",
+      "hours": "h",
+      "minutes": "m",
+      "seconds": "s"
+    }
   },
   "search": {
     "title": "Search Weapons",

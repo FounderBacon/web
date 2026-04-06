@@ -26,6 +26,15 @@ function isAuthRoute(pathname: string): boolean {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Mode landing : seuls /en et /fr sont accessibles, tout le reste redirect vers /{DEFAULT_LOCALE}
+  const isLanding = process.env.NEXT_PUBLIC_ENABLE_LANDING === "true"
+  if (isLanding) {
+    if (LOCALES.some((locale) => pathname === `/${locale}`)) {
+      return NextResponse.next()
+    }
+    return NextResponse.redirect(new URL(`/${DEFAULT_LOCALE}`, request.url))
+  }
+
   if (!hasLocale(pathname)) {
     request.nextUrl.pathname = `/${DEFAULT_LOCALE}${pathname}`
     return NextResponse.redirect(request.nextUrl)
