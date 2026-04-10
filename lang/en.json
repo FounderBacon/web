@@ -50,6 +50,14 @@
     "title": "Sign in",
     "epicButton": "Continue with Epic Games"
   },
+  "authCallback": {
+    "title": "Signing you in",
+    "subtitle": "Please wait while we complete your sign in.",
+    "errorTitle": "Sign in failed",
+    "missingCode": "Missing authorization code.",
+    "failed": "We could not complete your sign in. Please try again.",
+    "backToLogin": "Back to login"
+  },
   "privacy": {
     "title": "PRIVACY POLICY",
     "lastUpdated": "Last updated: April 4, 2026"

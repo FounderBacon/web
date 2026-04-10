@@ -50,6 +50,14 @@
     "title": "Se connecter",
     "epicButton": "Continuer avec Epic Games"
   },
+  "authCallback": {
+    "title": "Connexion en cours",
+    "subtitle": "Merci de patienter pendant la finalisation de la connexion.",
+    "errorTitle": "Echec de la connexion",
+    "missingCode": "Code d'autorisation manquant.",
+    "failed": "Impossible de finaliser la connexion. Veuillez reessayer.",
+    "backToLogin": "Retour a la connexion"
+  },
   "privacy": {
     "title": "POLITIQUE DE CONFIDENTIALITE",
     "lastUpdated": "Derniere mise a jour : 4 avril 2026"

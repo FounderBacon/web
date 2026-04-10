@@ -2,9 +2,9 @@ import { api } from "./client"
 import { setToken, removeToken } from "@/lib/auth"
 
 interface User {
-  id: string
-  email: string
-  name: string
+  epicId: string
+  displayName: string
+  role: string
 }
 
 interface CallbackResponse {
@@ -13,11 +13,11 @@ interface CallbackResponse {
 }
 
 export function getLoginUrl() {
-  return `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/login`
+  return `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/v1/epic/auth/login`
 }
 
 export async function handleCallback(code: string): Promise<CallbackResponse> {
-  const data = await api.get<CallbackResponse>(`/callback?code=${encodeURIComponent(code)}`, { skipAuth: true })
+  const data = await api.get<CallbackResponse>(`/v1/epic/auth/callback?code=${encodeURIComponent(code)}`, { skipAuth: true })
   setToken(data.token)
   return data
 }
