@@ -29,6 +29,8 @@ export function Footer({ locale, dict }: FooterProps) {
             <div className="flex flex-col gap-3">
               <h3 className="font-akkordeon-11 text-xl uppercase text-primary-foreground">{dict.footer.projects}</h3>
               <Link href={`/${locale}`} className="text-sm text-muted-foreground hover:text-primary-foreground transition-colors">{dict.footer.apiDocs}</Link>
+              <Link href={`/${locale}/roadmap`} className="text-sm text-muted-foreground hover:text-primary-foreground transition-colors">Roadmap</Link>
+              <Link href={`/${locale}/changelog`} className="text-sm text-muted-foreground hover:text-primary-foreground transition-colors">Changelog</Link>
               <Link href={`/${locale}`} className="text-sm text-muted-foreground hover:text-primary-foreground transition-colors">{dict.footer.status}</Link>
               <Link href={`/${locale}/privacy`} className="text-sm text-muted-foreground hover:text-primary-foreground transition-colors">{dict.footer.privacy}</Link>
             </div>

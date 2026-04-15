@@ -1,7 +1,8 @@
 import "./globals.css"
 import { Poppins } from "next/font/google"
 import localFont from "next/font/local"
-import { ThemeProvider } from "@/components/providers"
+import { ThemeProvider, FeatureProvider, RouteGuard } from "@/components/providers"
+import { fetchFeatures } from "@/lib/features"
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -49,17 +50,23 @@ const akkordeonThirteen = localFont({
   variable: "--font-akkordeon-13",
 })
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const features = await fetchFeatures()
+
   return (
     <html
       lang="en"
       className={`${poppins.variable} ${headingNow.variable} ${burbank.variable} ${akkordeonEight.variable} ${akkordeonNine.variable} ${akkordeonTen.variable} ${akkordeonEleven.variable} ${akkordeonTwelve.variable} ${akkordeonThirteen.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="m-0 p-0 overflow-x-hidden container">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+      <body className="m-0 p-0 overflow-x-hidden container bg-background text-foreground">
+        <FeatureProvider initial={features}>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+            <RouteGuard>
+              {children}
+            </RouteGuard>
+          </ThemeProvider>
+        </FeatureProvider>
       </body>
     </html>
   )

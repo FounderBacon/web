@@ -1,26 +1,41 @@
 import type { Metadata } from "next"
 import { getDictionary, isValidLocale } from "@/lib/i18n"
-import { SearchView } from "@/components/public/SearchView"
 import { SectionContainer } from "@/components/public/SectionContainer"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
+import { SearchHubGrid } from "@/components/public/SearchHubGrid"
+import { fetchCounters, type ItemCounters } from "@/lib/api/weapons"
 
 export const metadata: Metadata = {
-  title: "Search Weapons",
-  description: "Search and browse all weapons from Fortnite: Save the World.",
+  title: "Search",
+  description: "Browse weapons, heroes, traps and survivors from Fortnite: Save the World.",
 }
 
-export default async function SearchPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function SearchHubPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   if (!isValidLocale(locale)) return null
 
   const dict = await getDictionary(locale)
 
+  // Fetch compteurs cote serveur (fallback silencieux si API down)
+  let counters: ItemCounters | null = null
+  try {
+    counters = await fetchCounters()
+  } catch {
+    // Si l'API repond pas, on passe null -> le grid affiche "—"
+  }
+
   return (
-    <SectionContainer className="mx-auto max-w-7xl px-4 py-10 md:px-10">
-      <FbcnLogo className="pointer-events-none absolute right-0 top-0 size-64 opacity-[0.03] md:size-96" />
-      <h1 className="mb-2 font-burbank text-4xl uppercase text-foreground md:text-5xl">{dict.search.title}</h1>
-      <p className="mb-8 text-sm text-muted-foreground">Fortnite: Save the World</p>
-      <SearchView dict={dict} locale={locale} />
+    <SectionContainer className="relative mx-auto max-w-6xl px-4 py-16 md:px-10">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <FbcnLogo className="absolute right-0 top-0 size-64 opacity-[0.03] md:size-96" />
+      </div>
+
+      <div className="mb-14 flex flex-col gap-2">
+        <h1 className="font-burbank text-4xl uppercase leading-none text-foreground md:text-6xl">{dict.search.hubTitle}</h1>
+        <p className="max-w-lg font-sans text-base text-muted-foreground md:text-lg">{dict.search.hubSubtitle}</p>
+      </div>
+
+      <SearchHubGrid dict={dict} locale={locale} counters={counters} />
     </SectionContainer>
   )
 }

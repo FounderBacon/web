@@ -21,7 +21,7 @@
     "description": "Save the world.",
     "heroTitle1": "KNOW YOUR",
     "heroTitle2": "ARSENAL.",
-    "heroDescription": "Weapons. Traps. Heroes. Stats. Perks. Crafting.\nAll in one place, free forever.",
+    "heroDescription": "The first free, open REST API for Fortnite: Save the World.\nEvery weapon, every stat, every perk — all in one place.",
     "ctaWeapons": "EXPLORE WEAPONS",
     "ctaDocs": "VIEW API DOCS",
     "countdown": {
@@ -29,10 +29,79 @@
       "hours": "h",
       "minutes": "m",
       "seconds": "s"
-    }
+    },
+    "featuresTitle": "EVERYTHING YOU NEED",
+    "featureWeaponTitle": "THE COMPLETE DATABASE",
+    "featureWeaponSubtitle": "Every item that exists in Save the World.",
+    "featureWeaponDesc": "Weapons, heroes, traps, survivors — everything indexed with full stats, crafting recipes, tier upgrades, and perk slots. From Common to Mythic, nothing is missing.",
+    "featureWeaponStats": ["1,200+ weapons", "40+ stats each", "All item types"],
+    "featurePerkTitle": "PERK BUILDER",
+    "featurePerkSubtitle": "Craft the perfect loadout.",
+    "featurePerkDesc": "Pick your weapon, select your tier, choose every perk slot. See the impact on DPS, crit chance, and element in real time. When you're done, export your build as a shareable image.",
+    "featurePerkStats": ["Real-time DPS", "All perk combos", "Screenshot export"],
+    "featureApiTitle": "REST API",
+    "featureApiSubtitle": "Built for developers.",
+    "featureApiDesc": "A clean, documented REST API with no auth required for public endpoints. Fetch any weapon, search by category, filter by rarity or element. Build bots, dashboards, companion apps — whatever you need.",
+    "featureApiStats": ["No auth needed", "JSON responses", "Free forever"],
+    "showcaseTitle": "SIMPLE. POWERFUL. FREE.",
+    "showcaseSubtitle": "A single request. All the data you need.",
+    "arsenalTitle": "BROWSE THE ARSENAL",
+    "arsenalSubtitle": "Thousands of weapons with complete stats, perks, and crafting data.",
+    "arsenalCta": "VIEW ALL WEAPONS",
+    "faqTitle": "FAQ",
+    "faq": [
+      { "q": "What is FounderBacon?", "a": "A free, open REST API that indexes every weapon, trap, hero, and item from Fortnite: Save the World with complete stats, perks, and crafting data." },
+      { "q": "Is it really free?", "a": "Yes. No API key required for public endpoints, no rate limit for reasonable use, free forever. Built by a Founder, for the community." },
+      { "q": "Where does the data come from?", "a": "Directly from the game files. Every stat, perk description, crafting recipe, and tier upgrade is extracted and structured automatically." },
+      { "q": "How often is the data updated?", "a": "The database syncs after every game update. New weapons, balance changes, and perk adjustments are reflected within hours." },
+      { "q": "Can I use it for my bot / app / website?", "a": "Absolutely. The API is designed for developers. Build Discord bots, companion apps, dashboards — whatever you need." }
+    ],
+    "suggestTitle": "GOT AN IDEA?",
+    "suggestSubtitle": "FounderBacon is community-driven. If you have a feature request, a bug report, or just want to say hi, reach out.",
+    "suggestDiscord": "Join Discord",
+    "suggestGithub": "Open an issue",
+    "suggestTwitter": "Tweet at us",
+    "ctaFinalTitle": "READY TO BUILD?",
+    "ctaFinalSubtitle": "Built by a Founder, for the community.",
+    "ctaFinalButton": "GET STARTED"
   },
   "search": {
     "title": "Search Weapons",
+    "subtitle": "Fortnite: Save the World",
+    "weaponsTitle": "Weapons",
+    "trapsTitle": "Traps",
+    "placement": "Placement",
+    "target": "Target",
+    "backToHub": "Back to search",
+    "hubTitle": "Search",
+    "hubSubtitle": "Browse the full Save the World database. Pick a category to start.",
+    "available": "Available",
+    "comingSoon": "Soon",
+    "planned": "Planned",
+    "items": "items",
+    "browse": "Browse",
+    "hubCategories": {
+      "weapons": {
+        "title": "Weapons",
+        "subtitle": "Every ranged and melee weapon with stats, perks and crafting.",
+        "topics": ["Ranged", "Melee", "Perks", "Crafting", "DPS"]
+      },
+      "heroes": {
+        "title": "Heroes",
+        "subtitle": "All heroes with abilities, team perks and loadouts.",
+        "topics": ["Soldier", "Constructor", "Ninja", "Outlander"]
+      },
+      "traps": {
+        "title": "Traps",
+        "subtitle": "Damage values, triggers and placement strategies.",
+        "topics": ["Floor", "Wall", "Ceiling", "Triggers"]
+      },
+      "survivors": {
+        "title": "Survivors",
+        "subtitle": "Squads, leaders and synergies for your F.O.R.T. stats.",
+        "topics": ["Leaders", "Squads", "Synergies", "F.O.R.T."]
+      }
+    },
     "placeholder": "Search by name...",
     "filters": "Filters",
     "type": "Type",
@@ -44,7 +113,12 @@
     "element": "Element",
     "all": "All",
     "noResults": "No weapons found.",
-    "loading": "Loading..."
+    "noResultsHint": "Try adjusting your filters.",
+    "loading": "Loading...",
+    "resultsCount": "results",
+    "resultCount": "result",
+    "resetAll": "Reset filters",
+    "clear": "Clear"
   },
   "login": {
     "title": "Sign in",

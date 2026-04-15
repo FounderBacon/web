@@ -23,6 +23,10 @@ export const RARITY_TEXT: Record<string, string> = {
 export const RANGED_CATEGORIES = ["assault", "launcher", "pistol", "shotgun", "smg", "sniper"] as const
 export const MELEE_CATEGORIES = ["sword", "hardware", "spear", "scythe", "axe", "club"] as const
 
+// ── Traps ───────────────────────────────────────────────────────
+export const TRAP_PLACEMENTS = ["floor", "wall", "ceiling"] as const
+export const TRAP_TARGETS = ["hostile", "friendly"] as const
+
 // ── Elements ────────────────────────────────────────────────────
 export const ELEMENTS = ["physical", "energy", "fire", "water", "nature"] as const
 

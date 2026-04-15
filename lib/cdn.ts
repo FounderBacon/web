@@ -1,12 +1,15 @@
-const CDN_BASE = "https://cdn.founderbacon.com/icons/weapons"
-const FALLBACK = `${CDN_BASE}/icon-unknown.png`
+const CDN_BASE = "https://cdn.founderbacon.com/icons"
+export const UNKNOWN_ICON = `${CDN_BASE}/utils/unknown.png`
+const FALLBACK = UNKNOWN_ICON
 
-export function weaponIcon(icon: string | undefined): string {
+export type AssetCategory = "weapons-ranged" | "weapons-melee" | "traps"
+
+export function weaponIcon(icon: string | undefined, category: AssetCategory): string {
   if (!icon) return FALLBACK
-  return `${CDN_BASE}/${icon}.png`
+  return `${CDN_BASE}/${category}/${icon}.png`
 }
 
-export function weaponIconLarge(icon: string | undefined): string {
+export function weaponIconLarge(icon: string | undefined, category: AssetCategory): string {
   if (!icon) return FALLBACK
-  return `${CDN_BASE}/${icon}-l.png`
+  return `${CDN_BASE}/${category}/${icon}-l.png`
 }

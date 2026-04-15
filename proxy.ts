@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { isBeforeLaunch } from "@/lib/landing"
 
 const LOCALES = ["en", "fr"]
 const DEFAULT_LOCALE = "en"
@@ -26,9 +27,9 @@ function isAuthRoute(pathname: string): boolean {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Mode landing : seuls /en et /fr sont accessibles, tout le reste redirect vers /{DEFAULT_LOCALE}
-  const isLanding = process.env.NEXT_PUBLIC_ENABLE_LANDING === "true"
-  if (isLanding) {
+  // Mode landing (avant date de launch) : seuls /en et /fr sont accessibles,
+  // tout le reste redirect vers /{DEFAULT_LOCALE}
+  if (isBeforeLaunch()) {
     if (LOCALES.some((locale) => pathname === `/${locale}`)) {
       return NextResponse.next()
     }

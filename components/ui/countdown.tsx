@@ -35,22 +35,32 @@ type CountdownProps = {
   targetDate: Date
   labels: CountdownLabels
   className?: string
+  onComplete?: () => void
 }
 
-export function Countdown({ targetDate, labels, className }: CountdownProps) {
+export function Countdown({ targetDate, labels, className, onComplete }: CountdownProps) {
   const [timeLeft, setTimeLeft] = React.useState<TimeLeft>(() =>
     calculateTimeLeft(targetDate)
   )
   const [mounted, setMounted] = React.useState(false)
+  const completedRef = React.useRef(false)
 
   React.useEffect(() => {
     setMounted(true)
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft(targetDate))
+      const next = calculateTimeLeft(targetDate)
+      setTimeLeft(next)
+
+      // Declenche onComplete une seule fois quand on atteint 0
+      const isZero = next.days === 0 && next.hours === 0 && next.minutes === 0 && next.seconds === 0
+      if (isZero && !completedRef.current) {
+        completedRef.current = true
+        onComplete?.()
+      }
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [targetDate])
+  }, [targetDate, onComplete])
 
   if (!mounted) {
     return (

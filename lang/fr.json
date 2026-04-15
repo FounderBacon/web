@@ -21,7 +21,7 @@
     "description": "Save the world.",
     "heroTitle1": "CONNAIS TON",
     "heroTitle2": "ARSENAL.",
-    "heroDescription": "Armes. Pieges. Heros. Stats. Atouts. Fabrication.\nTout au meme endroit, gratuit pour toujours.",
+    "heroDescription": "La premiere API REST gratuite et ouverte pour Fortnite : Sauver le Monde.\nChaque arme, chaque stat, chaque atout — tout au meme endroit.",
     "ctaWeapons": "EXPLORER LES ARMES",
     "ctaDocs": "VOIR LA DOC API",
     "countdown": {
@@ -29,10 +29,79 @@
       "hours": "h",
       "minutes": "m",
       "seconds": "s"
-    }
+    },
+    "featuresTitle": "TOUT CE QU'IL VOUS FAUT",
+    "featureWeaponTitle": "LA BASE COMPLETE",
+    "featureWeaponSubtitle": "Chaque item qui existe dans Sauver le Monde.",
+    "featureWeaponDesc": "Armes, heros, pieges, survivants — tout est indexe avec les stats completes, recettes de fabrication, paliers d'evolution et emplacements de perks. De Commun a Mythique, rien ne manque.",
+    "featureWeaponStats": ["1 200+ armes", "40+ stats chacune", "Tous les types"],
+    "featurePerkTitle": "PERK BUILDER",
+    "featurePerkSubtitle": "Cree le loadout parfait.",
+    "featurePerkDesc": "Choisis ton arme, selectionne ton palier, configure chaque emplacement de perk. Vois l'impact sur le DPS, le crit chance et l'element en temps reel. Une fois termine, exporte ton build en image partageable.",
+    "featurePerkStats": ["DPS temps reel", "Toutes les combos", "Export screenshot"],
+    "featureApiTitle": "API REST",
+    "featureApiSubtitle": "Pensee pour les developpeurs.",
+    "featureApiDesc": "Une API REST propre et documentee, sans authentification pour les endpoints publics. Recupere n'importe quelle arme, filtre par categorie, rarete ou element. Cree des bots, dashboards, apps — tout ce dont tu as besoin.",
+    "featureApiStats": ["Sans auth", "Reponses JSON", "Gratuit pour toujours"],
+    "showcaseTitle": "SIMPLE. PUISSANT. GRATUIT.",
+    "showcaseSubtitle": "Une seule requete. Toutes les donnees dont tu as besoin.",
+    "arsenalTitle": "PARCOURIR L'ARSENAL",
+    "arsenalSubtitle": "Des milliers d'armes avec stats completes, perks et donnees de fabrication.",
+    "arsenalCta": "VOIR TOUTES LES ARMES",
+    "faqTitle": "FAQ",
+    "faq": [
+      { "q": "C'est quoi FounderBacon ?", "a": "Une API REST gratuite et ouverte qui indexe chaque arme, piege, heros et item de Fortnite : Sauver le Monde avec les stats completes, perks et donnees de fabrication." },
+      { "q": "C'est vraiment gratuit ?", "a": "Oui. Pas de cle API requise pour les endpoints publics, pas de limite de requetes pour un usage raisonnable, gratuit pour toujours. Cree par un Founder, pour la communaute." },
+      { "q": "D'ou viennent les donnees ?", "a": "Directement des fichiers du jeu. Chaque stat, description de perk, recette de fabrication et palier d'evolution est extrait et structure automatiquement." },
+      { "q": "A quelle frequence les donnees sont mises a jour ?", "a": "La base se synchronise apres chaque mise a jour du jeu. Nouvelles armes, changements d'equilibrage et ajustements de perks sont refletes en quelques heures." },
+      { "q": "Je peux l'utiliser pour mon bot / app / site ?", "a": "Absolument. L'API est concue pour les developpeurs. Cree des bots Discord, des apps, des dashboards — tout ce dont tu as besoin." }
+    ],
+    "suggestTitle": "UNE IDEE ?",
+    "suggestSubtitle": "FounderBacon est communautaire. Si tu as une demande de fonctionnalite, un bug a signaler ou juste envie de dire bonjour, contacte-nous.",
+    "suggestDiscord": "Rejoindre Discord",
+    "suggestGithub": "Ouvrir une issue",
+    "suggestTwitter": "Nous tweeter",
+    "ctaFinalTitle": "PRET A CONSTRUIRE ?",
+    "ctaFinalSubtitle": "Cree par un Founder, pour la communaute.",
+    "ctaFinalButton": "COMMENCER"
   },
   "search": {
     "title": "Rechercher des armes",
+    "subtitle": "Fortnite: Save the World",
+    "weaponsTitle": "Armes",
+    "trapsTitle": "Pieges",
+    "placement": "Placement",
+    "target": "Cible",
+    "backToHub": "Retour a la recherche",
+    "hubTitle": "Recherche",
+    "hubSubtitle": "Parcours toute la base Save the World. Choisis une categorie pour commencer.",
+    "available": "Disponible",
+    "comingSoon": "Bientot",
+    "planned": "Prevu",
+    "items": "items",
+    "browse": "Parcourir",
+    "hubCategories": {
+      "weapons": {
+        "title": "Armes",
+        "subtitle": "Toutes les armes a distance et de melee avec stats, perks et crafting.",
+        "topics": ["Distance", "Melee", "Perks", "Crafting", "DPS"]
+      },
+      "heroes": {
+        "title": "Heros",
+        "subtitle": "Tous les heros avec capacites, perks d'equipe et loadouts.",
+        "topics": ["Soldat", "Batisseur", "Ninja", "Eclaireur"]
+      },
+      "traps": {
+        "title": "Pieges",
+        "subtitle": "Valeurs de degats, declencheurs et strategies de placement.",
+        "topics": ["Sol", "Mur", "Plafond", "Declencheurs"]
+      },
+      "survivors": {
+        "title": "Survivants",
+        "subtitle": "Escouades, leaders et synergies pour tes stats F.O.R.T.",
+        "topics": ["Leaders", "Escouades", "Synergies", "F.O.R.T."]
+      }
+    },
     "placeholder": "Rechercher par nom...",
     "filters": "Filtres",
     "type": "Type",
@@ -44,7 +113,12 @@
     "element": "Element",
     "all": "Tous",
     "noResults": "Aucune arme trouvee.",
-    "loading": "Chargement..."
+    "noResultsHint": "Essayez d'ajuster vos filtres.",
+    "loading": "Chargement...",
+    "resultsCount": "resultats",
+    "resultCount": "resultat",
+    "resetAll": "Reinitialiser",
+    "clear": "Effacer"
   },
   "login": {
     "title": "Se connecter",

@@ -87,10 +87,19 @@
   --color-king-800: #31174F;
   --color-king-900: #190C27;
   --color-king-950: #11081B;
+  --color-king-980: #0F0D12;
+
 }
 
 :root {
   --radius: 0;
+  cursor: default;
+}
+
+button, [role="button"], a, select, summary,
+input[type="checkbox"], input[type="radio"], input[type="submit"],
+label[for], [tabindex]:not([tabindex="-1"]) {
+  cursor: pointer;
 }
 
 :root, .light {
@@ -128,7 +137,7 @@
 }
 
 .dark {
-  --background: var(--color-king-900);
+  --background: var(--color-king-980);
   --foreground: var(--color-king-50);
   --card: var(--color-king-800);
   --card-foreground: var(--color-king-50);
@@ -219,3 +228,39 @@
     animation: none;
   }
 }
+
+/* Slider infini pour la section armes */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* ── Skeleton loading ───────────────────────────────────── */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--muted);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  background-position: -200% 0;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
