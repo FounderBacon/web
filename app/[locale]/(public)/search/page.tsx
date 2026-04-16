@@ -25,7 +25,13 @@ export default async function SearchHubPage({ params }: { params: Promise<{ loca
     counters = await fetchCounters()
     console.log("[search] counters OK", counters)
   } catch (e) {
-    console.log("[search] counters FAIL", e instanceof Error ? e.message : e)
+    const err = e as { status?: number; message?: string; response?: { data?: unknown; headers?: unknown } }
+    console.log("[search] counters FAIL", {
+      status: err.status,
+      message: err.message,
+      data: err.response?.data,
+      headers: err.response?.headers,
+    })
   }
 
   return (
