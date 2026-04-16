@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "Browse weapons, heroes, traps and survivors from Fortnite: Save the World.",
 }
 
+export const dynamic = "force-dynamic"
+
 export default async function SearchHubPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   if (!isValidLocale(locale)) return null
