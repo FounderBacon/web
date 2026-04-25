@@ -8,9 +8,15 @@ declare module "axios" {
   }
 }
 
+const isServer = typeof window === "undefined"
+
 const instance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, ""),
-  headers: { "Content-Type": "application/json" },
+  baseURL: (isServer ? process.env.API_URL_INTERNAL : undefined)
+    ?? process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, ""),
+  headers: {
+    "Content-Type": "application/json",
+    ...(isServer ? { "User-Agent": "founderbacon-web-ssr/1.0" } : {}),
+  },
 })
 
 instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
