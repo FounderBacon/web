@@ -97,6 +97,42 @@ export function SkeletonTrendingList({ count = 6 }: { count?: number }) {
   )
 }
 
+// ── Skeleton Updates Section (home) ──────────────────────
+export function SkeletonUpdatesSection() {
+  return (
+    <section className="px-8 py-16 md:px-12 md:py-20 lg:px-24 lg:py-24 xl:px-48">
+      <div className="grid grid-cols-1 gap-10 md:grid-cols-4 md:gap-8 lg:gap-12">
+        {/* Liste changelogs */}
+        <div className="md:col-span-3">
+          <Skeleton className="mb-6 h-9 w-40 md:h-11" />
+          <ul className="flex flex-col gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <li key={i} className="bg-king-800/40 p-4">
+                <div className="mb-3 flex items-baseline gap-3">
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="mb-2 h-5 w-3/4" />
+                <Skeleton className="mb-1 h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </li>
+            ))}
+          </ul>
+        </div>
+        {/* Last update */}
+        <aside className="flex flex-col gap-3 md:col-span-1">
+          <div className="flex flex-col gap-2 border-l-2 border-primary/40 pl-4">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-12 w-32" />
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="mt-2 h-4 w-full" />
+          </div>
+        </aside>
+      </div>
+    </section>
+  )
+}
+
 // ── Skeleton hub card (search hub) ───────────────────────
 export function SkeletonHubCard() {
   return (

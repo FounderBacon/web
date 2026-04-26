@@ -69,3 +69,37 @@ export async function fetchVentureByWeekId(weekId: string): Promise<VentureWeek>
 export function cleanVentureName(rawName: string): string {
   return rawName.split(/\s{2,}|\(/)[0].trim()
 }
+
+// Extrait modifier + element depuis le champ raw du venturesSeason
+// Ex raw: "Scurvy Shoals             (Bouncy Husks)        Mutant Season                                  (Nature)"
+// -> { modifier: "Bouncy Husks", element: "Nature", type: "Mutant Season" }
+export interface ParsedSeason {
+  modifier: string | null
+  element: string | null
+  type: string | null
+}
+
+export function parseVentureSeason(raw: string): ParsedSeason {
+  const parens = Array.from(raw.matchAll(/\(([^)]+)\)/g)).map((m) => m[1].trim())
+  const withoutParens = raw.replace(/\([^)]+\)/g, "").replace(/\s+/g, " ").trim()
+  // Apres avoir vire les parentheses : "Scurvy Shoals Mutant Season"
+  // On considere que tout ce qui est apres le premier mot multi (le name) est le type
+  const parts = withoutParens.split(/\s{2,}/)
+  // Apres le replace, on n'a plus de double-space, donc on split sur le premier mot et le reste
+  // Plus simple : le type est le dernier "morceau" apres le name
+  const tokens = withoutParens.split(/\s+/)
+  // Heuristique : 2 derniers mots = type (Mutant Season, Miniboss)
+  const knownTypes = ["Mutant Season", "Miniboss", "Escalation"]
+  let type: string | null = null
+  for (const kt of knownTypes) {
+    if (withoutParens.includes(kt)) {
+      type = kt
+      break
+    }
+  }
+  return {
+    modifier: parens[0] ?? null,
+    element: parens[parens.length - 1] ?? null,
+    type,
+  }
+}

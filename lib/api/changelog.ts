@@ -1,3 +1,4 @@
+import type { Rarity } from "@/lib/types/shared"
 import { api } from "./client"
 
 export type ChangelogCategory = "added" | "changed" | "deprecated" | "removed" | "fixed" | "security"
@@ -20,6 +21,7 @@ export interface ChangelogEntry {
   summary: string
   scope: string[]
   breaking: boolean
+  rarity?: Rarity
   migrationNotes: string | null
   items: ChangelogItem[]
   isPublic: boolean

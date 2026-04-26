@@ -2,17 +2,27 @@
   "navbar": {
     "login": "Connexion",
     "search": "Recherche",
-    "API": "API"
+    "API": "API",
+    "changelog": "Changelog",
+    "discord": "Discord"
   },
   "footer": {
     "tagline": "Cree par un Founder, pour la communaute.",
-    "projects": "Projets",
-    "apiDocs": "API Docs",
+    "browse": "Explorer",
+    "resources": "Ressources",
+    "community": "Communaute",
+    "weapons": "Armes",
+    "traps": "Pieges",
+    "heroes": "Heros",
+    "searchHub": "Recherche",
+    "apiDocs": "Docs API",
+    "changelog": "Changelog",
+    "roadmap": "Roadmap",
     "status": "Statut",
-    "privacy": "Politique de confidentialite",
-    "social": "Social",
+    "discord": "Discord",
     "twitter": "Twitter / X",
     "github": "GitHub",
+    "privacy": "Confidentialite",
     "contact": "Contact"
   },
   "home": {

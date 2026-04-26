@@ -1,6 +1,6 @@
 // ── Types communs (synchro avec founderbacon-api) ────────────────
 
-export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic"
+export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic" | "ruby" | "diamond"
 export type Element = "physical" | "energy" | "fire" | "water" | "nature"
 export type DisplayTier = "copper" | "silver" | "malachite" | "obsidian" | "shadowshard" | "brightcore" | "sunbeam"
 export type Material = "ore" | "crystal"

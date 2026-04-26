@@ -2,6 +2,7 @@ import { fetchPopularGlobal, type PopularGlobalItem } from "@/lib/api/stats";
 import type { TrackEntityType } from "@/lib/api/track";
 import { RARITY_BG_DARK, RARITY_DECO } from "@/lib/constants";
 import type { Locale } from "@/lib/i18n";
+import { TrendingCarousel, type CarouselItemProps } from "./TrendingCarousel";
 import { TrendingCTA } from "./TrendingCTA";
 import { TrendingWeeklyItem } from "./TrendingWeeklyItem";
 
@@ -46,33 +47,52 @@ interface TrendingWeeklyProps {
 
 export async function TrendingWeekly({ locale, ctaLabel, ctaHref }: TrendingWeeklyProps) {
   let items: PopularGlobalItem[] = [];
+  let failed = false;
   try {
     items = await fetchPopularGlobal("7d", 3);
   } catch {
-    return null;
+    failed = true;
   }
 
   // Garder uniquement les items rattaches a une fiche reelle (avec name/slug)
   const top = items.filter((i) => i.name && i.slug).slice(0, 6);
 
-  if (top.length === 0) return null;
+  if (failed || top.length === 0) {
+    return (
+      <div className="flex max-w-lg flex-col gap-4">
+        <p className="border border-king-700/50 bg-king-800/40 px-4 py-6 text-center text-sm text-muted-foreground backdrop-blur-sm">
+          {failed ? "Trending data unavailable for now." : "No trending items yet — be the first to view some weapons!"}
+        </p>
+        <TrendingCTA href={ctaHref} label={ctaLabel} />
+      </div>
+    );
+  }
+
+  // Pre-calcul des props pour chaque item (reuse server-side + carousel client)
+  const itemsProps: CarouselItemProps[] = top.map((item) => ({
+    item,
+    href: entityHref(locale, item.entityType, item.slug as string),
+    colorClass: (item.rarity && RARITY_DECO[item.rarity]) ?? "text-primary",
+    bgClass: (item.rarity && RARITY_BG_DARK[item.rarity]) ?? "bg-king-800/65 hover:bg-king-800",
+    subtype: entitySubtype(item),
+  }));
 
   return (
     <div className="flex flex-col gap-4">
-      <ul className="flex max-w-lg flex-col gap-4">
-        {top.map((item) => {
-          const slug = item.slug as string;
-          const href = entityHref(locale, item.entityType, slug);
-          const colorClass = (item.rarity && RARITY_DECO[item.rarity]) ?? "text-primary";
-          const bgClass = (item.rarity && RARITY_BG_DARK[item.rarity]) ?? "bg-king-800/65 hover:bg-king-800";
-          const key = `${item.entityType}-${item.entitySlug}`;
-          return (
-            <li key={key}>
-              <TrendingWeeklyItem item={item} href={href} bgClass={bgClass} colorClass={colorClass} subtype={entitySubtype(item)} />
-            </li>
-          );
-        })}
+      {/* Mobile : carousel auto-scroll */}
+      <div className="md:hidden">
+        <TrendingCarousel items={itemsProps} />
+      </div>
+
+      {/* Tablette + desktop : liste verticale */}
+      <ul className="hidden max-w-lg flex-col gap-4 md:flex">
+        {itemsProps.map((p) => (
+          <li key={`${p.item.entityType}-${p.item.entitySlug}`}>
+            <TrendingWeeklyItem {...p} />
+          </li>
+        ))}
       </ul>
+
       <TrendingCTA href={ctaHref} label={ctaLabel} />
     </div>
   );

@@ -330,7 +330,6 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
                       width={32}
                       height={32}
                       className="size-8 shrink-0"
-                      unoptimized
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-foreground">{r.name}</p>
