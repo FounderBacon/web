@@ -20,7 +20,7 @@ export function Navbar({ locale, dict }: NavbarProps) {
 
   return (
     <nav className="sticky top-0 z-50 w-full">
-      <div className="flex items-center justify-between bg-king-900 px-4 py-4 dark:bg-king-800 md:px-10">
+      <div className="flex items-center justify-between bg-king-700 px-4 py-4 dark:bg-king-700 md:px-10">
         <div className="flex items-center gap-2">
           <FbcnLogo className="size-7 md:size-9" fill="#F2EBF9" />
           <Link href={`/${locale}`} className="mt-1 font-burbank text-xl text-primary-foreground md:mt-1.5 md:text-3xl">FOUNDERBACON</Link>
@@ -41,14 +41,14 @@ export function Navbar({ locale, dict }: NavbarProps) {
       </div>
 
       {open && (
-        <div className="flex flex-col gap-4 bg-king-900 px-4 pb-6 dark:bg-king-800 md:hidden">
+        <div className="flex flex-col gap-4 bg-king-700 px-4 pb-6 dark:bg-king-700 md:hidden">
           <SearchBar locale={locale} variant="mobile" onNavigate={() => setOpen(false)} />
           <Link href={`/${locale}/search`} className={navLinkClass} onClick={() => setOpen(false)}>{dict.navbar.search}</Link>
           <a href="https://api.founderbacon.com/docs/" target="_blank" rel="noopener noreferrer" className={navLinkClass} onClick={() => setOpen(false)}>{dict.navbar.API}</a>
         </div>
       )}
 
-      <BgNavbar className="pointer-events-none absolute -left-20 z-40 block h-auto w-full text-king-900 dark:text-king-800" fill="currentColor" />
+      <BgNavbar className="pointer-events-none absolute -left-20 z-40 block h-auto w-full text-king-700 dark:text-king-700" fill="currentColor" />
     </nav>
   )
 }

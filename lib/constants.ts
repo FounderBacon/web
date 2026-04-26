@@ -19,6 +19,26 @@ export const RARITY_TEXT: Record<string, string> = {
   mythic: "text-mythic-dark dark:text-mythic",
 }
 
+// Couleur vibrante (sans variante -dark) pour les decorations sur fond sombre
+export const RARITY_DECO: Record<string, string> = {
+  common: "text-common",
+  uncommon: "text-uncommon",
+  rare: "text-rare",
+  epic: "text-epic",
+  legendary: "text-legendary",
+  mythic: "text-mythic",
+}
+
+// Fond sombre teinte par rarete (avec hover) — utilise la variante -dark a 65%
+export const RARITY_BG_DARK: Record<string, string> = {
+  common: "bg-common-dark/65 hover:bg-common-dark",
+  uncommon: "bg-uncommon-dark/65 hover:bg-uncommon-dark",
+  rare: "bg-rare-dark/65 hover:bg-rare-dark",
+  epic: "bg-epic-dark/65 hover:bg-epic-dark",
+  legendary: "bg-legendary-dark/65 hover:bg-legendary-dark",
+  mythic: "bg-mythic-dark/65 hover:bg-mythic-dark",
+}
+
 // ── Categories ──────────────────────────────────────────────────
 export const RANGED_CATEGORIES = ["assault", "launcher", "pistol", "shotgun", "smg", "sniper"] as const
 export const MELEE_CATEGORIES = ["sword", "hardware", "spear", "scythe", "axe", "club"] as const

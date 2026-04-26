@@ -63,7 +63,12 @@
     "suggestTwitter": "Nous tweeter",
     "ctaFinalTitle": "PRET A CONSTRUIRE ?",
     "ctaFinalSubtitle": "Cree par un Founder, pour la communaute.",
-    "ctaFinalButton": "COMMENCER"
+    "ctaFinalButton": "COMMENCER",
+    "companion": "Votre compagnon pour Fortnite Save the World armes, perks et bien plus",
+    "breadcrumb": "fortnite {primary://} save the world {primary://} v40.20",
+    "seasonTitle": "Storm King",
+    "trendingWeekly": "Tendances de la semaine",
+    "browseAll": "Voir tout"
   },
   "search": {
     "title": "Rechercher des armes",

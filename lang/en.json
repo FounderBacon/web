@@ -63,7 +63,12 @@
     "suggestTwitter": "Tweet at us",
     "ctaFinalTitle": "READY TO BUILD?",
     "ctaFinalSubtitle": "Built by a Founder, for the community.",
-    "ctaFinalButton": "GET STARTED"
+    "ctaFinalButton": "GET STARTED",
+    "companion": "Your companion to Fortnite Save the World weapons and perks and beyond",
+    "breadcrumb": "fortnite {primary://} save the world {primary://} v40.20",
+    "seasonTitle": "Storm King",
+    "trendingWeekly": "Trending Weekly",
+    "browseAll": "Browse all"
   },
   "search": {
     "title": "Search Weapons",

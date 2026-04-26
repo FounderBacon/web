@@ -1,118 +1,110 @@
 import type { Metadata } from "next"
-import { SectionContainer } from "@/components/public/SectionContainer"
-import { FbcnLogo } from "@/components/svg/FbcnLogo"
-import { isValidLocale } from "@/lib/i18n"
+import Link from "next/link"
 import { notFound } from "next/navigation"
+import { entrySlug, fetchChangelog, type ChangelogCategory, type ChangelogEntry } from "@/lib/api/changelog"
+import { isValidLocale, type Locale } from "@/lib/i18n"
+
+export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   title: "Changelog",
   description: "FounderBacon changelog — every update, fix, and new feature.",
 }
 
-interface ChangelogEntry {
-  version: string
-  date: string
-  color: string
-  changes: { type: "feat" | "fix" | "refactor" | "chore"; desc: string }[]
+const CATEGORY_CLASS: Record<ChangelogCategory, string> = {
+  added: "bg-uncommon/10 text-uncommon",
+  changed: "bg-rare/10 text-rare",
+  fixed: "bg-epic/10 text-epic",
+  deprecated: "bg-legendary/10 text-legendary",
+  removed: "bg-malus/10 text-malus",
+  security: "bg-mythic/10 text-mythic",
 }
 
-const TYPE_BADGE: Record<string, { label: string; class: string }> = {
-  feat: { label: "feat", class: "bg-uncommon/10 text-uncommon" },
-  fix: { label: "fix", class: "bg-malus/10 text-malus" },
-  refactor: { label: "refactor", class: "bg-rare/10 text-rare" },
-  chore: { label: "chore", class: "bg-muted text-muted-foreground" },
+function formatDate(iso: string, locale: Locale): string {
+  return new Date(iso).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
 }
 
-const ENTRIES: ChangelogEntry[] = [
-  {
-    version: "v0.2.1",
-    date: "April 13, 2026",
-    color: "text-epic",
-    changes: [
-      { type: "feat", desc: "Search hub page with category cards (weapons, traps, heroes, survivors) wired to live counters endpoint" },
-      { type: "feat", desc: "Traps section: list view with filters, detail page with perk builder, tier selector and stats calculator" },
-      { type: "feat", desc: "Landing page auto-unlock: countdown at 0 swaps to the full home automatically without manual refresh" },
-      { type: "feat", desc: "Centralized Skeleton component with shimmer animation (weapon card, grid, detail, hub card, text)" },
-      { type: "feat", desc: "AssetImage component with automatic fallback to unknown icon on missing images" },
-      { type: "feat", desc: "API documentation link in navbar (api.founderbacon.com/docs)" },
-      { type: "refactor", desc: "Search page split: hub at /search, weapons list at /search/weapons, traps list at /search/traps" },
-      { type: "refactor", desc: "Design alignment between search hub and perk builder (consistent card styles, typography)" },
-      { type: "fix", desc: "Defensive guards on partial API payloads (missing displayTier, levelRange, crafting, DPS fields on melee)" },
-    ],
-  },
-  {
-    version: "v0.2.0",
-    date: "April 11, 2026",
-    color: "text-legendary",
-    changes: [
-      { type: "feat", desc: "Ranged & melee weapons database with full stats, perks, and crafting recipes" },
-      { type: "feat", desc: "Weapon search with filters (type, category, rarity, element)" },
-      { type: "feat", desc: "Perk builder with real-time DPS calculator" },
-      { type: "feat", desc: "Build screenshot export" },
-      { type: "feat", desc: "Traps database" },
-      { type: "feat", desc: "Homepage redesign with feature sections, carousel, and weapon slider" },
-      { type: "feat", desc: "STW profile linking via Epic Games OAuth" },
-      { type: "feat", desc: "Feature flags system with server-side fetch and client polling" },
-      { type: "feat", desc: "FAQ and suggestions sections" },
-      { type: "feat", desc: "Roadmap and changelog pages" },
-      { type: "feat", desc: "Dark/light theme support across all pages" },
-      { type: "fix", desc: "Navbar adapts when user is logged in" },
-      { type: "refactor", desc: "Semantic color tokens for full theme compatibility" },
-    ],
-  },
-  {
-    version: "v0.1.0",
-    date: "March 28, 2026",
-    color: "text-common",
-    changes: [
-      { type: "feat", desc: "Initial API infrastructure and hosting" },
-      { type: "feat", desc: "Website scaffolding with Next.js App Router" },
-      { type: "feat", desc: "Landing page with animated pattern and countdown" },
-      { type: "feat", desc: "Epic Games OAuth login flow" },
-      { type: "feat", desc: "Internationalization (EN/FR)" },
-      { type: "feat", desc: "SEO optimization with JSON-LD, OpenGraph, sitemap" },
-      { type: "chore", desc: "Security headers, image proxy, PWA manifest" },
-    ],
-  },
-]
+function categoryCounts(entry: ChangelogEntry): Array<{ category: ChangelogCategory; count: number }> {
+  const counts = new Map<ChangelogCategory, number>()
+  for (const it of entry.items) {
+    counts.set(it.category, (counts.get(it.category) ?? 0) + 1)
+  }
+  return Array.from(counts, ([category, count]) => ({ category, count }))
+}
 
-export default async function ChangelogPage({ params }: { params: Promise<{ locale: string }> }) {
+interface PageProps {
+  params: Promise<{ locale: string }>
+}
+
+export default async function ChangelogPage({ params }: PageProps) {
   const { locale } = await params
   if (!isValidLocale(locale)) notFound()
 
+  let entries: ChangelogEntry[] = []
+  try {
+    const res = await fetchChangelog({ limit: 50 })
+    entries = res.data
+  } catch {
+    entries = []
+  }
+
   return (
-    <SectionContainer className="mx-auto max-w-3xl px-4 py-16 md:px-10">
-      <FbcnLogo className="pointer-events-none absolute right-0 top-0 size-64 opacity-[0.03] md:size-96" />
+    <article className="mx-auto max-w-5xl px-6 py-16 md:py-24">
+      <header className="mb-14">
+        <h1 className="mb-3 font-burbank text-5xl uppercase text-primary-foreground md:text-7xl">Changelog</h1>
+        <p className="text-base text-muted-foreground md:text-lg">
+          Every update, fix, and new feature shipped.
+        </p>
+      </header>
 
-      <h1 className="mb-2 font-burbank text-4xl uppercase text-foreground md:text-6xl">Changelog</h1>
-      <p className="mb-14 text-base text-muted-foreground md:text-lg">
-        Every update, fix, and new feature shipped.
-      </p>
-
-      <div className="flex flex-col gap-12">
-        {ENTRIES.map((entry) => (
-          <div key={entry.version}>
-            {/* Header version */}
-            <div className="mb-4 flex items-baseline gap-3">
-              <span className={`font-burbank text-3xl uppercase md:text-4xl ${entry.color}`}>{entry.version}</span>
-              <span className="text-sm text-muted-foreground">{entry.date}</span>
-            </div>
-
-            {/* Liste des changements */}
-            <div className="flex flex-col gap-2 border-l-2 border-border/50 pl-5">
-              {entry.changes.map((change, i) => {
-                const badge = TYPE_BADGE[change.type]
-                return (
-                  <div key={i} className="flex items-start gap-3">
-                    <span className={`mt-0.5 shrink-0 px-2 py-0.5 text-[11px] font-semibold ${badge.class}`}>{badge.label}</span>
-                    <span className="text-sm text-foreground">{change.desc}</span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    </SectionContainer>
+      {entries.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No releases yet.</p>
+      ) : (
+        <ul className="flex flex-col gap-4">
+          {entries.map((entry) => (
+            <li key={entry._id}>
+              <Link
+                href={`/${locale}/changelog/${entrySlug(entry)}`}
+                className="block border border-king-700/50 bg-king-800/40 p-5 backdrop-blur-sm transition-colors hover:border-primary/50 hover:bg-king-800/60"
+              >
+                <header className="mb-2 flex flex-wrap items-baseline gap-3">
+                  <span className="font-burbank text-2xl uppercase text-primary">v{entry.version}</span>
+                  <span className="text-xs text-muted-foreground">{formatDate(entry.releaseDate, locale)}</span>
+                  {entry.breaking && (
+                    <span className="rounded bg-malus/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-malus">
+                      Breaking
+                    </span>
+                  )}
+                  {entry.scope.map((s) => (
+                    <span
+                      key={s}
+                      className="rounded-md border border-border/50 bg-muted/30 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </header>
+                <h2 className="mb-1 text-lg font-semibold text-foreground">{entry.title}</h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">{entry.summary}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {categoryCounts(entry).map(({ category, count }) => (
+                    <span
+                      key={category}
+                      className={`rounded-md px-2 py-0.5 text-[11px] font-medium capitalize ${CATEGORY_CLASS[category]}`}
+                    >
+                      {count} {category}
+                    </span>
+                  ))}
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </article>
   )
 }

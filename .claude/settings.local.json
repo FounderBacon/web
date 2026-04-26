@@ -4,7 +4,8 @@
       "Bash(rm -f pnpm-lock.yaml pnpm-workspace.yaml)",
       "Bash(rm -rf node_modules)",
       "Bash(npm install:*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:dev-api.founderbacon.com)"
     ]
   }
 }

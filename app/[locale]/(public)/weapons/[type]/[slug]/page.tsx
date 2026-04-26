@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { fetchRangedWeapon, fetchMeleeWeapon, calculateWeaponStats } from "@/lib/api/weapons";
+import { track } from "@/lib/api/track";
 import type { WeaponDetail, TierData, TierEntry, Perk } from "@/lib/types/weapon";
 import type { CalculatedStats } from "@/lib/types/calculate";
 import { isTierSplit } from "@/lib/types/weapon";
@@ -39,6 +40,7 @@ export default function WeaponPage() {
   const [modifiedStats, setModifiedStats] = useState<CalculatedStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const calcAbortRef = useRef<AbortController | null>(null);
+  const trackCalcRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -66,6 +68,16 @@ export default function WeaponPage() {
     }
     load();
   }, [params.type, params.slug]);
+
+  // Track view une seule fois par arme chargee
+  useEffect(() => {
+    if (!weapon) return;
+    track({
+      type: "weapon.viewed",
+      entityType: weapon.type === "melee" ? "weapon-melee" : "weapon-ranged",
+      entitySlug: weapon.slug,
+    });
+  }, [weapon?.slug, weapon?.type]);
 
   // Reset level au min du tier quand tier/material change
   useEffect(() => {
@@ -119,6 +131,16 @@ export default function WeaponPage() {
         if (controller.signal.aborted) return;
         setBaseStats(baseRes.stats);
         setModifiedStats(modifiedRes ? modifiedRes.stats : baseRes.stats);
+
+        // Track calculated debounced (1.5s) — evite de spammer a chaque tweak
+        if (trackCalcRef.current) clearTimeout(trackCalcRef.current);
+        trackCalcRef.current = setTimeout(() => {
+          track({
+            type: "weapon.calculated",
+            entityType: params.type === "melee" ? "weapon-melee" : "weapon-ranged",
+            entitySlug: params.slug,
+          });
+        }, 1500);
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
@@ -131,7 +153,10 @@ export default function WeaponPage() {
         if (!controller.signal.aborted) setStatsLoading(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (trackCalcRef.current) clearTimeout(trackCalcRef.current);
+    };
   }, [weapon, tier, material, level, offensive, selectedPerks, params.type, params.slug]);
 
   useEffect(() => {

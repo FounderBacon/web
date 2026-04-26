@@ -71,6 +71,32 @@ export function SkeletonWeaponDetail() {
   )
 }
 
+// ── Skeleton item Trending Weekly ────────────────────────
+export function SkeletonTrendingItem() {
+  return (
+    <div className="flex items-center gap-3 border border-king-700/50 bg-king-800/40 px-4 py-2">
+      <Skeleton className="size-14 shrink-0" />
+      <div className="flex flex-1 flex-col gap-1.5">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-3 w-16" />
+      </div>
+      <Skeleton className="size-5 shrink-0" />
+    </div>
+  )
+}
+
+export function SkeletonTrendingList({ count = 6 }: { count?: number }) {
+  return (
+    <ul className="flex max-w-lg flex-col gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <li key={i}>
+          <SkeletonTrendingItem />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 // ── Skeleton hub card (search hub) ───────────────────────
 export function SkeletonHubCard() {
   return (
