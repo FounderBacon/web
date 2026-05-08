@@ -1,42 +1,41 @@
 import type { Metadata } from "next"
-import Link from "next/link"
-import { ChevronLeft } from "lucide-react"
-import { getDictionary, isValidLocale } from "@/lib/i18n"
+import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n"
+import { SearchPageHeader } from "@/components/public/SearchPageHeader"
 import { SearchView } from "@/components/public/SearchView"
 import { SectionContainer } from "@/components/public/SectionContainer"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
+import { fetchCounters, type ItemCounters } from "@/lib/api/weapons"
 
 export const metadata: Metadata = {
   title: "Search Weapons",
   description: "Search and browse all weapons from Fortnite: Save the World.",
 }
 
+export const dynamic = "force-dynamic"
+
 export default async function SearchWeaponsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   if (!isValidLocale(locale)) return null
 
   const dict = await getDictionary(locale)
+  let counters: ItemCounters | null = null
+  try { counters = await fetchCounters() } catch { /* fallback silencieux */ }
 
   return (
-    <SectionContainer className="relative mx-auto max-w-7xl overflow-hidden px-4 py-10 md:px-10 md:py-16">
-      {/* Logo en filigrane */}
+    <SectionContainer className="relative mx-auto max-w-7xl px-4 py-10 md:px-10 md:py-16">
       <FbcnLogo className="pointer-events-none absolute -right-20 -top-20 z-0 size-80 opacity-[0.03] md:size-125" />
 
-      {/* Hero header */}
-      <div className="relative z-10 mb-10 flex flex-col gap-3 border-b border-border/50 pb-8 md:mb-14">
-        <Link
-          href={`/${locale}/search`}
-          className="flex w-fit items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ChevronLeft className="size-3" />
-          {dict.search.backToHub}
-        </Link>
-        <h1 className="font-burbank text-5xl uppercase leading-none text-foreground md:text-7xl">{dict.search.weaponsTitle}</h1>
-        <p className="text-sm text-muted-foreground">{dict.search.subtitle}</p>
-      </div>
+      <SearchPageHeader
+        locale={locale as Locale}
+        active="weapons"
+        title={dict.search.weaponsTitle}
+        subtitle={dict.search.subtitle}
+        dict={dict}
+        counters={counters}
+      />
 
       <div className="relative z-10">
-        <SearchView dict={dict} locale={locale} />
+        <SearchView dict={dict} locale={locale as Locale} />
       </div>
     </SectionContainer>
   )

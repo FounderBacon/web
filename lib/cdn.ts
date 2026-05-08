@@ -31,3 +31,38 @@ export function entityIcon(entityType: TrackEntityType, icon: string | undefined
   if (!folder || !icon) return FALLBACK
   return `${CDN_BASE}/${folder}/${icon}.png`
 }
+
+// Convertit un nom d'ability en slug url-safe pour le CDN.
+// Ex: "Lefty and Righty" -> "lefty-and-righty"
+//     "Goin' Commando!!!" -> "goin-commando"
+export function nameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/['‘’]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+}
+
+// CDN folders : "perks", "team-perks", "abilities"
+export function perkIcon(name: string | undefined): string {
+  if (!name) return FALLBACK
+  const slug = nameToSlug(name)
+  if (!slug) return FALLBACK
+  return `${CDN_BASE}/perks/${slug}.png`
+}
+
+export function teamPerkIcon(name: string | undefined): string {
+  if (!name) return FALLBACK
+  const slug = nameToSlug(name)
+  if (!slug) return FALLBACK
+  return `${CDN_BASE}/team-perks/${slug}.png`
+}
+
+export function abilityIcon(name: string | undefined): string {
+  if (!name) return FALLBACK
+  const slug = nameToSlug(name)
+  if (!slug) return FALLBACK
+  return `${CDN_BASE}/abilities/${slug}.png`
+}
+

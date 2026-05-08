@@ -19,6 +19,9 @@ function entityHref(locale: Locale, entityType: TrackEntityType, slug: string): 
   if (entityType === "weapon-ranged") return `/${locale}/weapons/ranged/${slug}`;
   if (entityType === "weapon-melee") return `/${locale}/weapons/melee/${slug}`;
   if (entityType === "trap") return `/${locale}/traps/${slug}`;
+  if (entityType === "hero") return `/${locale}/heroes/${slug}`;
+  if (entityType === "survivor") return `/${locale}/survivors/${slug}`;
+  if (entityType === "survivor-lead") return `/${locale}/survivor-leads/${slug}`;
   return null;
 }
 
@@ -55,7 +58,11 @@ export async function TrendingWeekly({ locale, ctaLabel, ctaHref }: TrendingWeek
   }
 
   // Garder uniquement les items rattaches a une fiche reelle (avec name/slug)
-  const top = items.filter((i) => i.name && i.slug).slice(0, 6);
+  // Survivors temporairement masques (soft-delete) — exclus du trending
+  const top = items
+    .filter((i) => i.name && i.slug)
+    .filter((i) => i.entityType !== "survivor" && i.entityType !== "survivor-lead")
+    .slice(0, 6);
 
   if (failed || top.length === 0) {
     return (

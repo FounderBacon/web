@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
+import { LoadoutTrigger } from "@/components/loadout/LoadoutTrigger"
 import { BgNavbar } from "@/components/svg/BgNavbar"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
 import { SearchBar } from "@/components/ui/search-bar"
@@ -45,29 +46,33 @@ export function Navbar({ locale, dict }: NavbarProps) {
 
         <SearchBar locale={locale} />
 
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="flex flex-col gap-1.5 lg:hidden"
-          aria-label="Menu"
-        >
-          <span className={`block h-0.5 w-6 bg-primary-foreground transition-transform duration-200 ${open ? "translate-y-2 rotate-45" : ""}`} />
-          <span className={`block h-0.5 w-6 bg-primary-foreground transition-opacity duration-200 ${open ? "opacity-0" : ""}`} />
-          <span className={`block h-0.5 w-6 bg-primary-foreground transition-transform duration-200 ${open ? "-translate-y-2 -rotate-45" : ""}`} />
-        </button>
+        <div className="flex items-center gap-3">
+          <LoadoutTrigger />
 
-        <div className="hidden items-center gap-4 lg:flex">
-          <Link href={`/${locale}/changelog`} className={linkClass(`/${locale}/changelog`)}>
-            {dict.navbar.changelog}
-          </Link>
-          <a
-            href="https://api.founderbacon.com/docs/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${navLinkBase} ${navLinkInactive}`}
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            className="flex flex-col gap-1.5 lg:hidden"
+            aria-label="Menu"
           >
-            {dict.navbar.API}
-          </a>
+            <span className={`block h-0.5 w-6 bg-primary-foreground transition-transform duration-200 ${open ? "translate-y-2 rotate-45" : ""}`} />
+            <span className={`block h-0.5 w-6 bg-primary-foreground transition-opacity duration-200 ${open ? "opacity-0" : ""}`} />
+            <span className={`block h-0.5 w-6 bg-primary-foreground transition-transform duration-200 ${open ? "-translate-y-2 -rotate-45" : ""}`} />
+          </button>
+
+          <div className="hidden items-center gap-4 lg:flex">
+            <Link href={`/${locale}/changelog`} className={linkClass(`/${locale}/changelog`)}>
+              {dict.navbar.changelog}
+            </Link>
+            <a
+              href="https://api.founderbacon.com/docs/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${navLinkBase} ${navLinkInactive}`}
+            >
+              {dict.navbar.API}
+            </a>
+          </div>
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import type { TrapDetail } from "@/lib/types/trap"
 import type { TierData, CraftingIngredient } from "@/lib/types/shared"
 import { weaponIconLarge } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
+import { formatInt } from "@/lib/format"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Separator } from "@/components/ui/separator"
 import { AssetImage } from "@/components/ui/asset-image"
@@ -109,7 +110,7 @@ function CraftingSection({
               {section.items.map((ing) => (
                 <div key={ing.name} className="flex items-center justify-between py-0.5">
                   <span className="text-sm capitalize text-muted-foreground">{cleanName(ing.name)}</span>
-                  <span className="text-sm font-medium tabular-nums text-foreground">x{ing.quantity}</span>
+                  <span className="text-sm font-medium tabular-nums text-foreground">x{formatInt(ing.quantity)}</span>
                 </div>
               ))}
             </div>

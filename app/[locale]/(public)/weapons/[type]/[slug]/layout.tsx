@@ -5,11 +5,11 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { type, slug } = await params
+  const { slug } = await params
   const name = slug.replace(/-/g, " ").replace(/\b\w/g, (s) => s.toUpperCase()).replace(/\s\w+$/, "")
 
   return {
-    title: `${name} - ${type === "melee" ? "Melee" : "Ranged"} Weapon`,
+    title: name,
     description: `Stats, perks, and crafting details for ${name} in Fortnite: Save the World.`,
     openGraph: {
       title: `${name} | FounderBacon`,

@@ -5,9 +5,11 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { fetchHeroes, type HeroClass } from "@/lib/api/heroes"
+import { fetchSurvivors } from "@/lib/api/survivors"
 import { fetchTraps } from "@/lib/api/traps"
 import { fetchMeleeWeapons, fetchRangedWeapons } from "@/lib/api/weapons"
-import { weaponIcon } from "@/lib/cdn"
+import { UNKNOWN_ICON, weaponIcon } from "@/lib/cdn"
 import { RARITY_DECO } from "@/lib/constants"
 import type { Locale } from "@/lib/i18n"
 
@@ -23,13 +25,18 @@ const FILTER_TREE: Record<string, FilterOption[]> = {
   root: [
     { key: "weapons", label: "Weapons", children: "weapons" },
     { key: "traps", label: "Traps", children: "traps" },
-    { key: "heroes", label: "Heroes", disabled: true },
-    { key: "survivors", label: "Survivors", disabled: true },
+    { key: "heroes", label: "Heroes", children: "hero-class" },
     { key: "rarity", label: "Rarity", children: "rarity" },
   ],
   weapons: [
     { key: "ranged", label: "Ranged", children: "ranged-cat" },
     { key: "melee", label: "Melee", children: "melee-cat" },
+  ],
+  "hero-class": [
+    { key: "soldier", label: "Soldier" },
+    { key: "constructor", label: "Constructor" },
+    { key: "ninja", label: "Ninja" },
+    { key: "outlander", label: "Outlander" },
   ],
   "ranged-cat": [
     { key: "assault", label: "Assault" },
@@ -71,27 +78,31 @@ interface FilterChip {
 const RANGED_CATS = new Set(["assault", "sniper", "pistol", "shotgun", "smg", "launcher"])
 const MELEE_CATS = new Set(["sword", "hardware", "spear", "scythe", "axe", "club"])
 const PLACEMENTS = new Set(["floor", "wall", "ceiling"])
+const HERO_CLASSES = new Set<HeroClass>(["soldier", "constructor", "ninja", "outlander"])
 const RARITIES = new Set(["common", "uncommon", "rare", "epic", "legendary", "mythic"])
 
 // ── Conversion path -> sources/params ─────────────────────────────
-type Source = "ranged" | "melee" | "trap"
+type Source = "ranged" | "melee" | "trap" | "hero" | "survivor"
 
 function pathToFilters(path: FilterChip[]): {
   sources: Source[]
-  params: { search?: string; category?: string; placement?: string; rarity?: string }
+  params: { search?: string; category?: string; placement?: string; heroClass?: HeroClass; rarity?: string }
 } {
   const keys = path.map((p) => p.key)
-  const params: { category?: string; placement?: string; rarity?: string } = {}
+  const params: { category?: string; placement?: string; heroClass?: HeroClass; rarity?: string } = {}
 
-  let sources: Source[] = ["ranged", "melee", "trap"]
-  if (keys.includes("weapons")) sources = sources.filter((s) => s !== "trap")
+  // survivors desactives temporairement (soft-disable, pas supprimes)
+  let sources: Source[] = ["ranged", "melee", "trap", "hero"]
+  if (keys.includes("weapons")) sources = sources.filter((s) => s === "ranged" || s === "melee")
   if (keys.includes("traps")) sources = ["trap"]
+  if (keys.includes("heroes")) sources = ["hero"]
   if (keys.includes("ranged")) sources = sources.filter((s) => s === "ranged")
   if (keys.includes("melee")) sources = sources.filter((s) => s === "melee")
 
   for (const k of keys) {
     if (RANGED_CATS.has(k) || MELEE_CATS.has(k)) params.category = k
     else if (PLACEMENTS.has(k)) params.placement = k
+    else if (HERO_CLASSES.has(k as HeroClass)) params.heroClass = k as HeroClass
     else if (RARITIES.has(k)) params.rarity = k
   }
 
@@ -99,11 +110,12 @@ function pathToFilters(path: FilterChip[]): {
 }
 
 interface SearchResult {
-  type: "weapon-ranged" | "weapon-melee" | "trap"
+  type: "weapon-ranged" | "weapon-melee" | "trap" | "hero" | "survivor"
   slug: string
   name: string
   rarity: string
-  icon: string
+  icon?: string
+  iconUrl?: string
   subtype: string
 }
 
@@ -159,21 +171,37 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
           ...(filterState.params.rarity ? { rarity: filterState.params.rarity } : {}),
           limit: 20,
         }
+        const heroParams = {
+          ...(search ? { search } : {}),
+          ...(filterState.params.heroClass ? { heroClass: filterState.params.heroClass } : {}),
+          ...(filterState.params.rarity ? { rarity: filterState.params.rarity } : {}),
+          limit: 20,
+        }
+        const survivorParams = {
+          ...(filterState.params.rarity ? { rarity: filterState.params.rarity } : {}),
+          limit: 20,
+        }
 
         const wantRanged = filterState.sources.includes("ranged")
         const wantMelee = filterState.sources.includes("melee")
         const wantTraps = filterState.sources.includes("trap")
+        const wantHeroes = filterState.sources.includes("hero")
+        const wantSurvivors = filterState.sources.includes("survivor")
 
-        const [ranged, melee, traps] = await Promise.all([
+        const [ranged, melee, traps, heroes, survivors] = await Promise.all([
           wantRanged ? fetchRangedWeapons(baseParams).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
           wantMelee ? fetchMeleeWeapons(baseParams).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
           wantTraps ? fetchTraps(trapParams).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+          wantHeroes ? fetchHeroes(heroParams).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+          wantSurvivors ? fetchSurvivors(survivorParams).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
         ])
 
         const all: SearchResult[] = [
           ...ranged.data.map((w) => ({ type: "weapon-ranged" as const, slug: w.slug, name: w.name, rarity: w.rarity, icon: w.icon, subtype: w.category })),
           ...melee.data.map((w) => ({ type: "weapon-melee" as const, slug: w.slug, name: w.name, rarity: w.rarity, icon: w.icon, subtype: w.category })),
           ...traps.data.map((t) => ({ type: "trap" as const, slug: t.slug, name: t.name, rarity: t.rarity, icon: t.icon, subtype: t.placement })),
+          ...heroes.data.map((h) => ({ type: "hero" as const, slug: h.slug, name: h.name, rarity: h.rarity, iconUrl: h.iconUrl, subtype: h.subclass || h.heroClass })),
+          ...survivors.data.map((s) => ({ type: "survivor" as const, slug: s.slug, name: s.name, rarity: s.rarity, subtype: `T${s.tier}` })),
         ]
         setResults(all.slice(0, 40))
         setActiveIndex(0)
@@ -214,6 +242,10 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
       onOpenChange(false)
       if (r.type === "trap") {
         router.push(`/${locale}/traps/${r.slug}`)
+      } else if (r.type === "hero") {
+        router.push(`/${locale}/heroes/${r.slug}`)
+      } else if (r.type === "survivor") {
+        router.push(`/${locale}/survivors/${r.slug}`)
       } else {
         const t = r.type === "weapon-ranged" ? "ranged" : "melee"
         router.push(`/${locale}/weapons/${t}/${r.slug}`)
@@ -239,8 +271,11 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
   }
 
   function iconUrl(r: SearchResult) {
+    if (r.iconUrl) return r.iconUrl
     if (r.type === "trap") return weaponIcon(r.icon, "traps")
-    return weaponIcon(r.icon, r.type === "weapon-ranged" ? "weapons-ranged" : "weapons-melee")
+    if (r.type === "weapon-ranged") return weaponIcon(r.icon, "weapons-ranged")
+    if (r.type === "weapon-melee") return weaponIcon(r.icon, "weapons-melee")
+    return UNKNOWN_ICON
   }
 
   const menuOptions = currentMenu ? FILTER_TREE[currentMenu] : null

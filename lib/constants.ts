@@ -1,5 +1,8 @@
 // ── Raretes ─────────────────────────────────────────────────────
+// Liste complete (utilisee pour le typage / mapping si l'API renvoie ces valeurs)
 export const RARITIES = ["common", "uncommon", "rare", "epic", "legendary", "mythic", "ruby", "diamond"] as const
+// Liste affichee dans les filtres user-facing (ruby/diamond = perso, masques)
+export const RARITIES_VISIBLE = ["common", "uncommon", "rare", "epic", "legendary", "mythic"] as const
 
 export const RARITY_BG: Record<string, string> = {
   common: "bg-common",
@@ -33,6 +36,30 @@ export const RARITY_DECO: Record<string, string> = {
   mythic: "text-mythic",
   ruby: "text-ruby",
   diamond: "text-diamond",
+}
+
+// Border-left coloree par rarete (accent gauche sur cards)
+export const RARITY_BORDER: Record<string, string> = {
+  common: "border-l-common",
+  uncommon: "border-l-uncommon",
+  rare: "border-l-rare",
+  epic: "border-l-epic",
+  legendary: "border-l-legendary",
+  mythic: "border-l-mythic",
+  ruby: "border-l-ruby",
+  diamond: "border-l-diamond",
+}
+
+// Gradient subtil par rarete pour les zones d'image
+export const RARITY_GRADIENT: Record<string, string> = {
+  common: "from-common/5",
+  uncommon: "from-uncommon/5",
+  rare: "from-rare/10",
+  epic: "from-epic/10",
+  legendary: "from-legendary/10",
+  mythic: "from-mythic/15",
+  ruby: "from-ruby/15",
+  diamond: "from-diamond/15",
 }
 
 // Fond sombre teinte par rarete (avec hover) — utilise la variante -dark a 65%

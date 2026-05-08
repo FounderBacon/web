@@ -39,7 +39,7 @@ export function Footer({ locale, dict }: FooterProps) {
             <h3 className={headingClass}>{dict.footer.browse}</h3>
             <Link href={`/${locale}/search/weapons`} className={linkClass}>{dict.footer.weapons}</Link>
             <Link href={`/${locale}/search/traps`} className={linkClass}>{dict.footer.traps}</Link>
-            <Link href={`/${locale}/search`} className={linkClass}>{dict.footer.heroes}</Link>
+            <Link href={`/${locale}/search/heroes`} className={linkClass}>{dict.footer.heroes}</Link>
             <Link href={`/${locale}/search`} className={linkClass}>{dict.footer.searchHub}</Link>
           </div>
 

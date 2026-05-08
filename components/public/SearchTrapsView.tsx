@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Search as SearchIcon, X, RotateCcw } from "lucide-react";
+import { Search as SearchIcon, SlidersHorizontal, X, RotateCcw } from "lucide-react";
 import { fetchTraps } from "@/lib/api/traps";
 import type { TrapSummary } from "@/lib/types/trap";
 import type { PaginatedResponse } from "@/lib/types/shared";
@@ -10,7 +10,8 @@ import type { Locale } from "@/lib/i18n";
 import type en from "@/lang/en.json";
 import { Arrow } from "@/components/svg/Arrow";
 import { weaponIcon } from "@/lib/cdn";
-import { TRAP_PLACEMENTS, TRAP_TARGETS, RARITIES, ELEMENTS, RARITY_TEXT, RARITY_BG } from "@/lib/constants";
+import { TRAP_PLACEMENTS, TRAP_TARGETS, RARITIES_VISIBLE, ELEMENTS, RARITY_TEXT, RARITY_BG } from "@/lib/constants";
+import { formatInt } from "@/lib/format";
 import { SkeletonWeaponGrid } from "@/components/ui/skeleton";
 import { AssetImage } from "@/components/ui/asset-image";
 
@@ -95,111 +96,129 @@ export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
   const totalPages = result?.pagination.totalPages ?? 1;
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Searchbar */}
-      <div className="relative">
-        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={dict.search.placeholder}
-          aria-label={dict.search.placeholder}
-          className="w-full border border-border/50 bg-card/40 px-11 py-3.5 font-burbank text-lg uppercase tracking-wide text-foreground placeholder:text-muted-foreground/60 backdrop-blur-sm focus:border-primary focus:outline-none transition-colors"
-        />
-        {search && (
-          <button
-            type="button"
-            onClick={() => setSearch("")}
-            aria-label={dict.search.clear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <X className="size-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Filtres */}
-      <div className="flex flex-col gap-4">
-        <FilterGroup label={dict.search.placement}>
-          <FilterChip label={dict.search.all} active={!placement} onClick={() => setPlacement("")} />
-          {TRAP_PLACEMENTS.map((p) => (
-            <FilterChip key={p} label={p} active={placement === p} onClick={() => setPlacement(p)} />
-          ))}
-        </FilterGroup>
-
-        <FilterGroup label={dict.search.target}>
-          <FilterChip label={dict.search.all} active={!target} onClick={() => setTarget("")} />
-          {TRAP_TARGETS.map((t) => (
-            <FilterChip key={t} label={t} active={target === t} onClick={() => setTarget(t)} />
-          ))}
-        </FilterGroup>
-
-        <FilterGroup label={dict.search.rarity}>
-          <FilterChip label={dict.search.all} active={!rarity} onClick={() => setRarity("")} />
-          {RARITIES.map((r) => (
-            <FilterChip
-              key={r}
-              label={r}
-              active={rarity === r}
-              onClick={() => setRarity(r)}
-              dotClass={RARITY_BG[r]}
-              activeTextClass={RARITY_TEXT[r]}
-            />
-          ))}
-        </FilterGroup>
-
-        <FilterGroup label={dict.search.element}>
-          <FilterChip label={dict.search.all} active={!element} onClick={() => setElement("")} />
-          {ELEMENTS.map((e) => (
-            <FilterChip key={e} label={e} active={element === e} onClick={() => setElement(e)} />
-          ))}
-        </FilterGroup>
-      </div>
-
-      {/* Results header */}
-      <div className="flex items-center justify-between border-t border-border/50 pt-5">
-        <div className="flex items-baseline gap-2">
-          {loading ? (
-            <span className="font-burbank text-2xl uppercase text-muted-foreground md:text-3xl">...</span>
-          ) : (
-            <>
-              <span className="font-burbank text-2xl uppercase text-foreground md:text-3xl">{total.toLocaleString()}</span>
-              <span className="text-sm uppercase tracking-wider text-muted-foreground">
-                {total === 1 ? dict.search.resultCount : dict.search.resultsCount}
-              </span>
-            </>
-          )}
-        </div>
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={resetAll}
-            className="flex cursor-pointer items-center gap-1.5 border border-border/50 bg-card/40 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
-          >
-            <RotateCcw className="size-3" />
-            {dict.search.resetAll}
-            <span className="ml-1 bg-primary/20 px-1.5 text-primary">{activeFilters}</span>
-          </button>
-        )}
-      </div>
-
-      {/* Grid */}
-      {loading ? (
-        <SkeletonWeaponGrid />
-      ) : result && result.data.length === 0 ? (
-        <EmptyState dict={dict} onReset={resetAll} hasFilters={hasFilters} />
-      ) : result && result.data.length > 0 ? (
-        <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {result.data.map((trap) => (
-              <TrapCard key={trap.slug} trap={trap} locale={locale} />
-            ))}
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_1fr]">
+      {/* Sidebar filtres : sticky sous la navbar sur desktop */}
+      <aside className="lg:sticky lg:top-20 lg:self-start">
+        <div className="overflow-hidden border border-border/50 bg-card/40 backdrop-blur-sm">
+          <div className="flex items-center justify-between border-b border-border/50 bg-card px-4 py-2">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="size-4 text-muted-foreground" />
+              <p className="font-burbank text-sm uppercase tracking-wider text-foreground">Filters</p>
+              {hasFilters && (
+                <span className="bg-primary/20 px-1.5 text-[11px] font-semibold tabular-nums text-primary">{activeFilters}</span>
+              )}
+            </div>
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={resetAll}
+                className="flex cursor-pointer items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <RotateCcw className="size-3" />
+                {dict.search.resetAll}
+              </button>
+            )}
           </div>
 
-          {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
-        </>
-      ) : null}
+          <div className="flex flex-col gap-4 p-3">
+            <div className="relative">
+              <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={dict.search.placeholder}
+                aria-label={dict.search.placeholder}
+                className="w-full border border-border/50 bg-background/60 px-9 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none transition-colors"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  aria-label={dict.search.clear}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            <FilterGroup label={dict.search.placement}>
+              <FilterChip label={dict.search.all} active={!placement} onClick={() => setPlacement("")} />
+              {TRAP_PLACEMENTS.map((p) => (
+                <FilterChip key={p} label={p} active={placement === p} onClick={() => setPlacement(p)} />
+              ))}
+            </FilterGroup>
+
+            <FilterGroup label={dict.search.target}>
+              <FilterChip label={dict.search.all} active={!target} onClick={() => setTarget("")} />
+              {TRAP_TARGETS.map((t) => (
+                <FilterChip key={t} label={t} active={target === t} onClick={() => setTarget(t)} />
+              ))}
+            </FilterGroup>
+
+            <FilterGroup label={dict.search.rarity}>
+              <FilterChip label={dict.search.all} active={!rarity} onClick={() => setRarity("")} />
+              {RARITIES_VISIBLE.map((r) => (
+                <FilterChip
+                  key={r}
+                  label={r}
+                  active={rarity === r}
+                  onClick={() => setRarity(r)}
+                  dotClass={RARITY_BG[r]}
+                  activeTextClass={RARITY_TEXT[r]}
+                />
+              ))}
+            </FilterGroup>
+
+            <FilterGroup label={dict.search.element}>
+              <FilterChip label={dict.search.all} active={!element} onClick={() => setElement("")} />
+              {ELEMENTS.map((e) => (
+                <FilterChip key={e} label={e} active={element === e} onClick={() => setElement(e)} />
+              ))}
+            </FilterGroup>
+          </div>
+        </div>
+      </aside>
+
+      {/* Content : result count + grid + pagination */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between border border-border/50 bg-card/40 px-4 py-2.5 backdrop-blur-sm">
+          <div className="flex items-baseline gap-2">
+            {loading ? (
+              <span className="font-burbank text-2xl uppercase text-muted-foreground">...</span>
+            ) : (
+              <>
+                <span className="font-burbank text-2xl uppercase text-foreground md:text-3xl">{formatInt(total)}</span>
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  {total === 1 ? dict.search.resultCount : dict.search.resultsCount}
+                </span>
+              </>
+            )}
+          </div>
+          {totalPages > 1 && !loading && (
+            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              Page <span className="font-bold text-foreground">{page}</span> / {totalPages}
+            </span>
+          )}
+        </div>
+
+        {loading ? (
+          <SkeletonWeaponGrid />
+        ) : result && result.data.length === 0 ? (
+          <EmptyState dict={dict} onReset={resetAll} hasFilters={hasFilters} />
+        ) : result && result.data.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {result.data.map((trap) => (
+                <TrapCard key={trap.slug} trap={trap} locale={locale} />
+              ))}
+            </div>
+
+            {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -2,12 +2,19 @@ import type { Material } from "./shared"
 
 // ── Params envoyes au back ──────────────────────────────────────
 
+export interface CalculateHeroParams {
+  commanderPerkId?: string
+  supportPerkIds: string[]
+  teamPerkIds: string[]
+}
+
 export interface CalculateParams {
   tier: string
   material: Material
   level: number
   offensive: number
   perkIds: string[]
+  hero?: CalculateHeroParams
 }
 
 // ── Reponse du back ─────────────────────────────────────────────

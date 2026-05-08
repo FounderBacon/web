@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = slug.replace(/-/g, " ").replace(/\b\w/g, (s) => s.toUpperCase())
 
   return {
-    title: `${name} - Trap`,
+    title: name,
     description: `Stats, perks, and crafting details for ${name} in Fortnite: Save the World.`,
     openGraph: {
       title: `${name} | FounderBacon`,

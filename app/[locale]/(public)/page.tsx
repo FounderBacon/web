@@ -21,8 +21,8 @@ const TITLE_BY_LOCALE: Record<string, string> = {
 };
 
 const DESC_BY_LOCALE: Record<string, string> = {
-  en: "Browse weapons, traps, heroes and survivors of Fortnite Save the World. Track perks, calculate damage, follow weekly rotations.",
-  fr: "Explorez armes, pieges, heros et survivants de Fortnite Save the World. Suivez les perks, calculez les degats, suivez les rotations hebdomadaires.",
+  en: "Browse weapons, traps and heroes of Fortnite Save the World. Track perks, calculate damage, follow weekly rotations.",
+  fr: "Explorez armes, pieges et heros de Fortnite Save the World. Suivez les perks, calculez les degats, suivez les rotations hebdomadaires.",
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {

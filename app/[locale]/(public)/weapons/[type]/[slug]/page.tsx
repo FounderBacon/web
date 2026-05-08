@@ -4,7 +4,12 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { fetchRangedWeapon, fetchMeleeWeapon, calculateWeaponStats } from "@/lib/api/weapons";
+import { fetchHero } from "@/lib/api/heroes";
+import { fetchTeamPerk } from "@/lib/api/team-perks";
 import { track } from "@/lib/api/track";
+import { buildHeroSlot } from "@/lib/loadout/buildSlot";
+import { loadoutToApiPayload } from "@/lib/loadout/selectors";
+import { useLoadout, type LoadoutHeroSlot, type LoadoutTeamPerk } from "@/lib/loadout/store";
 import type { WeaponDetail, TierData, TierEntry, Perk } from "@/lib/types/weapon";
 import type { CalculatedStats } from "@/lib/types/calculate";
 import { isTierSplit } from "@/lib/types/weapon";
@@ -29,18 +34,52 @@ export default function WeaponPage() {
   const [material, setMaterial] = useState<"ore" | "crystal">((searchParams.get("m") as "ore" | "crystal") ?? "ore");
   const [selectedPerks, setSelectedPerks] = useState<Record<number, Perk | null>>({});
   const [previewPerk, setPreviewPerk] = useState<Perk | null>(null);
-  const [level, setLevel] = useState(0);
-  const [offensive, setOffensive] = useState(0);
+  const initialParamsRef = useRef(Object.fromEntries(searchParams.entries()));
+  // Init level/offensive depuis l'URL si presents (sinon 0 = sera reset par tier change)
+  const [level, setLevel] = useState(() => {
+    const v = parseInt(initialParamsRef.current.l ?? "", 10);
+    return isNaN(v) ? 0 : v;
+  });
+  const [offensive, setOffensive] = useState(() => {
+    const v = parseInt(initialParamsRef.current.o ?? "", 10);
+    return isNaN(v) ? 0 : v;
+  });
+  // Si l'URL contient un loadout, on bypass le reset auto du level (sinon le mount le ramene au min du tier)
+  const levelFromUrlRef = useRef(!!initialParamsRef.current.l);
   const [copied, setCopied] = useState(false);
   const [screenshotOpen, setScreenshotOpen] = useState(false);
-  const initialParamsRef = useRef(Object.fromEntries(searchParams.entries()));
 
-  // Stats calculees par le back
+  // Stats calculees par le back :
+  // - baseStats : vraie base de l'arme (sans heros, sans perks)
+  // - heroStats : avec heros (sans perks) — = baseStats si pas de loadout
+  // - modifiedStats : avec heros + perks (final affiche)
   const [baseStats, setBaseStats] = useState<CalculatedStats | null>(null);
+  const [heroStats, setHeroStats] = useState<CalculatedStats | null>(null);
   const [modifiedStats, setModifiedStats] = useState<CalculatedStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const calcAbortRef = useRef<AbortController | null>(null);
   const trackCalcRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Loadout (commander + support + team perks + offensive F.O.R.T.) - persistant entre pages
+  const loadoutCommander = useLoadout((s) => s.commander);
+  const loadoutSupport = useLoadout((s) => s.support);
+  const loadoutTeamPerks = useLoadout((s) => s.teamPerks);
+  const loadoutOffensive = useLoadout((s) => s.offensive);
+  const heroPayload = loadoutToApiPayload({
+    commander: loadoutCommander,
+    support: loadoutSupport,
+    teamPerks: loadoutTeamPerks,
+  });
+
+  // Hydrate offensive depuis le loadout sauve si pas dans l'URL (au premier rendu apres hydration zustand)
+  const offensiveHydratedRef = useRef(!!initialParamsRef.current.o);
+  useEffect(() => {
+    if (offensiveHydratedRef.current) return;
+    if (loadoutOffensive > 0) {
+      setOffensive(loadoutOffensive);
+      offensiveHydratedRef.current = true;
+    }
+  }, [loadoutOffensive]);
 
   useEffect(() => {
     async function load() {
@@ -69,6 +108,64 @@ export default function WeaponPage() {
     load();
   }, [params.type, params.slug]);
 
+  // Hydratation du loadout depuis l'URL au mount (une seule fois)
+  // Param : hc=commanderSlug, hs1..hs5=supportSlug, htp=teamPerkId,teamPerkId
+  useEffect(() => {
+    const init = initialParamsRef.current;
+    const hasHeroData =
+      !!init.hc ||
+      [1, 2, 3, 4, 5].some((i) => !!init[`hs${i}`]) ||
+      !!init.htp;
+    if (!hasHeroData) return;
+
+    let cancelled = false;
+    async function hydrate() {
+      // Commander
+      const commanderTask = init.hc
+        ? fetchHero(init.hc).then((d) => buildHeroSlot(d, "commander")).catch(() => null)
+        : Promise.resolve<LoadoutHeroSlot | null>(null);
+
+      // Support (5 slots positionnels)
+      const supportTasks = [1, 2, 3, 4, 5].map((i) => {
+        const slug = init[`hs${i}`];
+        if (!slug) return Promise.resolve<LoadoutHeroSlot | null>(null);
+        return fetchHero(slug).then((d) => buildHeroSlot(d, "support")).catch(() => null);
+      });
+
+      // Team perks
+      const teamPerkIds = init.htp ? init.htp.split(",").filter(Boolean) : [];
+      const teamPerkTasks = teamPerkIds.map((id) =>
+        fetchTeamPerk(id)
+          .then<LoadoutTeamPerk>((d) => ({
+            perkId: d.perkId,
+            name: d.name,
+            icon: d.icon,
+            requirements: d.requirements,
+            description: d.description,
+          }))
+          .catch(() => null),
+      );
+
+      const [commander, support, teamPerks] = await Promise.all([
+        commanderTask,
+        Promise.all(supportTasks),
+        Promise.all(teamPerkTasks),
+      ]);
+
+      if (cancelled) return;
+      useLoadout.setState({
+        commander,
+        support,
+        teamPerks: teamPerks.filter((p): p is LoadoutTeamPerk => p !== null),
+      });
+    }
+
+    hydrate();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Track view une seule fois par arme chargee
   useEffect(() => {
     if (!weapon) return;
@@ -80,12 +177,22 @@ export default function WeaponPage() {
   }, [weapon?.slug, weapon?.type]);
 
   // Reset level au min du tier quand tier/material change
+  // Exception : au premier passage, on garde le level de l'URL (clamped)
   useEffect(() => {
     if (!weapon) return;
     const tierEntry: TierEntry | undefined = weapon.tiers[tier];
     if (!tierEntry) return;
     const td = isTierSplit(tierEntry) ? tierEntry[material] : tierEntry;
-    if (td?.levelRange?.min !== undefined) setLevel(td.levelRange.min);
+    const range = td?.levelRange;
+    if (!range) return;
+
+    if (levelFromUrlRef.current) {
+      // Premier passage : clamp le level URL dans le range courant
+      levelFromUrlRef.current = false;
+      setLevel((prev) => Math.max(range.min, Math.min(range.max, prev)));
+      return;
+    }
+    setLevel(range.min);
   }, [weapon, tier, material]);
 
   // Appel /calculate a chaque changement de tier/material/perks/level/offensive
@@ -108,7 +215,14 @@ export default function WeaponPage() {
 
     setStatsLoading(true);
 
-    const baseReq = calculateWeaponStats(weaponType, params.slug, {
+    // 3 niveaux de stats pour les jauges :
+    // 1. rawBase : sans heros, sans perks (vraie base de l'arme)
+    // 2. withHero : avec heros, sans perks (= rawBase si pas de loadout)
+    // 3. withPerks : avec heros + perks (= withHero si pas de perks)
+    const hasHero = !!heroPayload;
+    const hasPerks = perkIds.length > 0;
+
+    const rawBaseReq = calculateWeaponStats(weaponType, params.slug, {
       tier,
       material,
       level,
@@ -116,21 +230,37 @@ export default function WeaponPage() {
       perkIds: [],
     });
 
-    const modifiedReq = perkIds.length > 0
+    const withHeroReq = hasHero
+      ? calculateWeaponStats(weaponType, params.slug, {
+          tier,
+          material,
+          level,
+          offensive,
+          perkIds: [],
+          hero: heroPayload,
+        })
+      : null;
+
+    const withPerksReq = hasPerks
       ? calculateWeaponStats(weaponType, params.slug, {
           tier,
           material,
           level,
           offensive,
           perkIds,
+          ...(hasHero && { hero: heroPayload }),
         })
       : null;
 
-    Promise.all([baseReq, modifiedReq])
-      .then(([baseRes, modifiedRes]) => {
+    Promise.all([rawBaseReq, withHeroReq, withPerksReq])
+      .then(([rawRes, heroRes, perksRes]) => {
         if (controller.signal.aborted) return;
-        setBaseStats(baseRes.stats);
-        setModifiedStats(modifiedRes ? modifiedRes.stats : baseRes.stats);
+        const rawBase = rawRes.stats;
+        const withHero = heroRes ? heroRes.stats : rawBase;
+        const withPerks = perksRes ? perksRes.stats : withHero;
+        setBaseStats(rawBase);
+        setHeroStats(withHero);
+        setModifiedStats(withPerks);
 
         // Track calculated debounced (1.5s) — evite de spammer a chaque tweak
         if (trackCalcRef.current) clearTimeout(trackCalcRef.current);
@@ -157,30 +287,49 @@ export default function WeaponPage() {
       controller.abort();
       if (trackCalcRef.current) clearTimeout(trackCalcRef.current);
     };
-  }, [weapon, tier, material, level, offensive, selectedPerks, params.type, params.slug]);
+  // Le heroPayload est serialise pour avoir une dep stable (re-calc seulement quand le loadout change reellement)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weapon, tier, material, level, offensive, selectedPerks, params.type, params.slug, JSON.stringify(heroPayload)]);
+
+  // Construction des query params (utilisee par sync URL + share)
+  const writeUrlParams = useCallback((url: URL) => {
+    url.search = "";
+    url.searchParams.set("t", tier);
+    url.searchParams.set("m", material);
+    for (const [slot, perk] of Object.entries(selectedPerks)) {
+      if (perk) url.searchParams.set(`p${slot}`, perk.perkId);
+    }
+    if (level > 0) url.searchParams.set("l", String(level));
+    if (offensive > 0) url.searchParams.set("o", String(offensive));
+    if (loadoutCommander) url.searchParams.set("hc", loadoutCommander.heroSlug);
+    loadoutSupport.forEach((s, i) => {
+      if (s) url.searchParams.set(`hs${i + 1}`, s.heroSlug);
+    });
+    if (loadoutTeamPerks.length > 0) {
+      url.searchParams.set("htp", loadoutTeamPerks.map((p) => p.perkId).join(","));
+    }
+  }, [tier, material, selectedPerks, level, offensive, loadoutCommander, loadoutSupport, loadoutTeamPerks]);
 
   useEffect(() => {
     if (!weapon) return;
     const url = new URL(window.location.href);
-    url.search = "";
-    url.searchParams.set("t", tier);
-    url.searchParams.set("m", material);
-    for (const [slot, perk] of Object.entries(selectedPerks)) {
-      if (perk) url.searchParams.set(`p${slot}`, perk.perkId);
-    }
+    writeUrlParams(url);
     window.history.replaceState(null, "", url.pathname + url.search);
-  }, [tier, material, selectedPerks, weapon]);
+  }, [weapon, writeUrlParams]);
 
   const buildShareUrl = useCallback(() => {
     const url = new URL(window.location.href);
-    url.search = "";
-    url.searchParams.set("t", tier);
-    url.searchParams.set("m", material);
-    for (const [slot, perk] of Object.entries(selectedPerks)) {
-      if (perk) url.searchParams.set(`p${slot}`, perk.perkId);
-    }
+    writeUrlParams(url);
     return url.toString();
-  }, [tier, material, selectedPerks]);
+  }, [writeUrlParams]);
+
+  // Path absolu (avec query) pour l'API QR — synchro avec les memes params que share
+  const buildSharePath = useCallback(() => {
+    if (typeof window === "undefined") return "";
+    const url = new URL(window.location.href);
+    writeUrlParams(url);
+    return url.pathname + url.search;
+  }, [writeUrlParams]);
 
   async function handleShare() {
     const url = buildShareUrl();
@@ -237,7 +386,14 @@ export default function WeaponPage() {
       <SectionContainer className="min-h-screen">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
-        <WeaponHeader weapon={weapon} onShare={handleShare} copied={copied} onScreenshot={() => setScreenshotOpen(true)} />
+        <WeaponHeader
+          weapon={weapon}
+          onShare={handleShare}
+          copied={copied}
+          onScreenshot={() => setScreenshotOpen(true)}
+          sharePath={buildSharePath()}
+          shareUrl={buildShareUrl()}
+        />
 
         {tierData && (
           <>
@@ -247,7 +403,7 @@ export default function WeaponPage() {
                 <div className="grid min-w-0 flex-1 grid-cols-[3fr_3fr_3fr] items-start gap-4">
                   <div>
                     <TierSelector weapon={weapon} tier={tier} material={material} hasSplit={hasSplit} level={level} offensive={offensive} onTierChange={setTier} onMaterialChange={setMaterial} onLevelChange={setLevel} onOffensiveChange={setOffensive} />
-                    <StatsColumn baseStats={baseStats} modifiedStats={modifiedStats} isRanged={isRanged} loading={statsLoading} />
+                    <StatsColumn baseStats={baseStats} heroStats={heroStats} modifiedStats={modifiedStats} isRanged={isRanged} loading={statsLoading} />
                   </div>
                   <BuildColumn slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
                   <EffectsColumn tierData={tierData} slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={isRanged} weaponPerk={weaponPerk} weaponPerkLevel={lastSlot?.unlockLevel} />
@@ -288,7 +444,7 @@ export default function WeaponPage() {
           </>
         )}
 
-        {weapon && tierData && <ScreenshotDialog open={screenshotOpen} onOpenChange={setScreenshotOpen} weapon={weapon} tierData={tierData} selectedPerks={selectedPerks} slots={weapon.perkSlots.slice(0, -1)} isRanged={isRanged} baseStats={baseStats} modifiedStats={modifiedStats} />}
+        {weapon && tierData && <ScreenshotDialog open={screenshotOpen} onOpenChange={setScreenshotOpen} weapon={weapon} tierData={tierData} selectedPerks={selectedPerks} slots={weapon.perkSlots.slice(0, -1)} isRanged={isRanged} baseStats={baseStats} heroStats={heroStats} modifiedStats={modifiedStats} commander={loadoutCommander} support={loadoutSupport} teamPerks={loadoutTeamPerks} sharePath={buildSharePath()} />}
       </SectionContainer>
     </TooltipProvider>
   );

@@ -5,7 +5,9 @@
       "Bash(rm -rf node_modules)",
       "Bash(npm install:*)",
       "WebSearch",
-      "WebFetch(domain:dev-api.founderbacon.com)"
+      "WebFetch(domain:dev-api.founderbacon.com)",
+      "mcp__ide__getDiagnostics",
+      "Bash(\"C:/Program Files/Git/bin/git.exe\" diff --stat main...HEAD)"
     ]
   }
 }
