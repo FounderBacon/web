@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { fetchHero, fetchHeroes, type HeroClass, type HeroSummary } from "@/lib/api/heroes"
 import { perkIcon } from "@/lib/cdn"
 import { buildHeroSlot } from "@/lib/loadout/buildSlot"
+import type { LoadoutHeroSlot } from "@/lib/loadout/store"
 import { RARITIES_VISIBLE, RARITY_BG, RARITY_TEXT } from "@/lib/constants"
 
 const HERO_CLASSES: HeroClass[] = ["soldier", "constructor", "ninja", "outlander"]
