@@ -1,22 +1,29 @@
 "use client"
 
-import type { WeaponDetail, RangedWeaponDetail } from "@/lib/types/weapon"
+import { Camera, Check, QrCode, Share2 } from "lucide-react"
+import { useState } from "react"
+import { QrShareDialog } from "@/components/share/QrShareDialog"
+import { AssetImage } from "@/components/ui/asset-image"
+import { Button } from "@/components/ui/button"
 import { weaponIcon } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
-import { Button } from "@/components/ui/button"
-import { AssetImage } from "@/components/ui/asset-image"
-import { Share2, Check, Camera } from "lucide-react"
+import type { RangedWeaponDetail, WeaponDetail } from "@/lib/types/weapon"
 
 interface WeaponHeaderProps {
   weapon: WeaponDetail
   onShare: () => void
   copied: boolean
   onScreenshot: () => void
+  // Path complet pour le QR (ex: "/fr/weapons/ranged/destroyer?t=2&l=30")
+  sharePath: string
+  // URL absolue pour affichage + copy (https://...)
+  shareUrl: string
 }
 
-export function WeaponHeader({ weapon, onShare, copied, onScreenshot }: WeaponHeaderProps) {
+export function WeaponHeader({ weapon, onShare, copied, onScreenshot, sharePath, shareUrl }: WeaponHeaderProps) {
   const rarityColor = RARITY_TEXT[weapon.rarity] ?? "text-muted-foreground"
   const isRanged = weapon.type === "ranged"
+  const [qrOpen, setQrOpen] = useState(false)
 
   return (
     <div className="border-b border-border/50 bg-background px-4 py-3 sm:px-6">
@@ -50,12 +57,25 @@ export function WeaponHeader({ weapon, onShare, copied, onScreenshot }: WeaponHe
             {copied ? <Check className="size-3" /> : <Share2 className="size-3" />}
             <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
           </Button>
+          <Button size="xs" variant="outline" onClick={() => setQrOpen(true)}>
+            <QrCode className="size-3" />
+            <span className="hidden sm:inline">QR</span>
+          </Button>
           <Button size="xs" variant="outline" onClick={onScreenshot}>
             <Camera className="size-3" />
             <span className="hidden sm:inline">Screenshot</span>
           </Button>
         </div>
       </div>
+
+      <QrShareDialog
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        path={sharePath}
+        fullUrl={shareUrl}
+        title={weapon.name}
+        description="Scan or download to share this build"
+      />
     </div>
   )
 }

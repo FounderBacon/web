@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import Link from "next/link"
 import { RefreshCw, Shield, Sword, Hammer, Users, Crosshair, UserCheck, Loader2 } from "lucide-react"
 import { api, ApiError } from "@/lib/api"
+import { formatInt } from "@/lib/format"
 import { SectionContainer } from "@/components/public/SectionContainer"
 
 interface StwProfile {
@@ -145,7 +146,7 @@ export default function StwProfilePage() {
       <div className="mb-10 grid grid-cols-3 gap-3">
         <StatCard label="Commander Level" value={profile.progression.commanderLevel} icon={<Shield className="size-5" />} />
         <StatCard label="Collection Book" value={profile.progression.collectionBookLevel} />
-        <StatCard label="Total XP" value={profile.progression.totalXp.toLocaleString()} />
+        <StatCard label="Total XP" value={formatInt(profile.progression.totalXp)} />
       </div>
 
       {/* Research */}

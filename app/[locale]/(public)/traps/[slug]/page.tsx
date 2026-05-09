@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { fetchTrap } from "@/lib/api/traps";
 import { calculateTrapStats, type TrapCalculatedStats } from "@/lib/api/traps";
+import { track } from "@/lib/api/track";
 import type { TrapDetail } from "@/lib/types/trap";
 import type { TierData } from "@/lib/types/shared";
 import type { Perk } from "@/lib/types/weapon";
@@ -37,6 +38,7 @@ export default function TrapPage() {
   const [modifiedStats, setModifiedStats] = useState<TrapCalculatedStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const calcAbortRef = useRef<AbortController | null>(null);
+  const trackCalcRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -64,6 +66,16 @@ export default function TrapPage() {
     }
     load();
   }, [params.slug]);
+
+  // Track view une seule fois par trap chargee
+  useEffect(() => {
+    if (!trap) return;
+    track({
+      type: "trap.viewed",
+      entityType: "trap",
+      entitySlug: trap.slug,
+    });
+  }, [trap?.slug]);
 
   // Reset level au min du tier quand le tier change
   useEffect(() => {
@@ -105,6 +117,16 @@ export default function TrapPage() {
         if (controller.signal.aborted) return;
         setBaseStats(baseRes.stats);
         setModifiedStats(modifiedRes ? modifiedRes.stats : baseRes.stats);
+
+        // Track calculated debounced (1.5s) — evite de spammer a chaque tweak
+        if (trackCalcRef.current) clearTimeout(trackCalcRef.current);
+        trackCalcRef.current = setTimeout(() => {
+          track({
+            type: "trap.calculated",
+            entityType: "trap",
+            entitySlug: params.slug,
+          });
+        }, 1500);
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
@@ -116,7 +138,10 @@ export default function TrapPage() {
         if (!controller.signal.aborted) setStatsLoading(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (trackCalcRef.current) clearTimeout(trackCalcRef.current);
+    };
   }, [trap, tier, level, offensive, selectedPerks, params.slug]);
 
   // Sync URL

@@ -10,6 +10,7 @@ import {
   bonusColor,
   formatStatName,
 } from "@/lib/constants"
+import { formatStat } from "@/lib/format"
 
 interface TrapStatsColumnProps {
   baseStats: TrapCalculatedStats | null
@@ -139,7 +140,7 @@ function DpsStatRow({
       <span className="shrink-0 text-right text-lg font-bold tabular-nums text-foreground">
         {fmt(value)}{suffix}
       </span>
-      <span className={`w-16 shrink-0 text-right text-base tabular-nums ${hasChange ? bonusColor(change) : "text-common-dark dark:text-common"}`}>
+      <span className={`w-24 shrink-0 text-right text-base tabular-nums ${hasChange ? bonusColor(change) : "text-common-dark dark:text-common"}`}>
         {hasChange && (suffix === "%" ? (change > 0 ? "+" : "") : (change > 0 ? "+" : ""))}
         {hasChange ? fmt(change) + suffix : "0"}
       </span>
@@ -186,7 +187,7 @@ function StatRow({
 
   const base = baseVal as number
   const current = modifiedVal as number
-  const max = STAT_MAX[statKey] ?? Math.max(base * 2, 100)
+  const max = Math.max(STAT_MAX[statKey] ?? 0, current * 1.15, base * 1.15, 1)
 
   const baseWidth = Math.min((base / max) * 100, 100)
   const modWidth = Math.min((current / max) * 100, 100)
@@ -200,7 +201,7 @@ function StatRow({
         <span className={`shrink-0 text-right text-lg font-bold tabular-nums ${hasModification ? bonusColor(delta) : "text-foreground"}`}>
           {fmt(current)}
         </span>
-        <span className={`w-16 shrink-0 text-right text-base tabular-nums ${hasModification ? bonusColor(delta) : "text-common-dark dark:text-common"}`}>
+        <span className={`w-24 shrink-0 text-right text-base tabular-nums ${hasModification ? bonusColor(delta) : "text-common-dark dark:text-common"}`}>
           {hasModification ? (delta > 0 ? "+" : "") + fmt(delta) : "0"}
         </span>
       </div>
@@ -233,7 +234,4 @@ function StatLabel({ statKey }: { statKey: string }) {
   )
 }
 
-function fmt(n: number | undefined | null): string {
-  if (typeof n !== "number" || Number.isNaN(n)) return "—"
-  return n % 1 === 0 ? String(n) : n.toFixed(2)
-}
+const fmt = formatStat

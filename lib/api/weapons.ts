@@ -7,6 +7,9 @@ export interface ItemCounters {
   melee: number
   ranged: number
   trap: number
+  hero?: number
+  survivor?: number
+  worker?: number
 }
 
 export async function fetchCounters(): Promise<ItemCounters> {

@@ -7,7 +7,7 @@ import { fetchCounters, type ItemCounters } from "@/lib/api/weapons"
 
 export const metadata: Metadata = {
   title: "Search",
-  description: "Browse weapons, heroes, traps and survivors from Fortnite: Save the World.",
+  description: "Browse weapons, heroes and traps from Fortnite: Save the World.",
 }
 
 export const dynamic = "force-dynamic"

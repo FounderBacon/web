@@ -1,5 +1,8 @@
 // ── Raretes ─────────────────────────────────────────────────────
-export const RARITIES = ["common", "uncommon", "rare", "epic", "legendary", "mythic"] as const
+// Liste complete (utilisee pour le typage / mapping si l'API renvoie ces valeurs)
+export const RARITIES = ["common", "uncommon", "rare", "epic", "legendary", "mythic", "ruby", "diamond"] as const
+// Liste affichee dans les filtres user-facing (ruby/diamond = perso, masques)
+export const RARITIES_VISIBLE = ["common", "uncommon", "rare", "epic", "legendary", "mythic"] as const
 
 export const RARITY_BG: Record<string, string> = {
   common: "bg-common",
@@ -8,6 +11,8 @@ export const RARITY_BG: Record<string, string> = {
   epic: "bg-epic",
   legendary: "bg-legendary",
   mythic: "bg-mythic",
+  ruby: "bg-ruby",
+  diamond: "bg-diamond",
 }
 
 export const RARITY_TEXT: Record<string, string> = {
@@ -17,6 +22,56 @@ export const RARITY_TEXT: Record<string, string> = {
   epic: "text-epic-dark dark:text-epic",
   legendary: "text-legendary-dark dark:text-legendary",
   mythic: "text-mythic-dark dark:text-mythic",
+  ruby: "text-ruby-dark dark:text-ruby",
+  diamond: "text-diamond-dark dark:text-diamond",
+}
+
+// Couleur vibrante (sans variante -dark) pour les decorations sur fond sombre
+export const RARITY_DECO: Record<string, string> = {
+  common: "text-common",
+  uncommon: "text-uncommon",
+  rare: "text-rare",
+  epic: "text-epic",
+  legendary: "text-legendary",
+  mythic: "text-mythic",
+  ruby: "text-ruby",
+  diamond: "text-diamond",
+}
+
+// Border-left coloree par rarete (accent gauche sur cards)
+export const RARITY_BORDER: Record<string, string> = {
+  common: "border-l-common",
+  uncommon: "border-l-uncommon",
+  rare: "border-l-rare",
+  epic: "border-l-epic",
+  legendary: "border-l-legendary",
+  mythic: "border-l-mythic",
+  ruby: "border-l-ruby",
+  diamond: "border-l-diamond",
+}
+
+// Gradient subtil par rarete pour les zones d'image
+export const RARITY_GRADIENT: Record<string, string> = {
+  common: "from-common/5",
+  uncommon: "from-uncommon/5",
+  rare: "from-rare/10",
+  epic: "from-epic/10",
+  legendary: "from-legendary/10",
+  mythic: "from-mythic/15",
+  ruby: "from-ruby/15",
+  diamond: "from-diamond/15",
+}
+
+// Fond sombre teinte par rarete (avec hover) — utilise la variante -dark a 65%
+export const RARITY_BG_DARK: Record<string, string> = {
+  common: "bg-common-dark/65 hover:bg-common-dark",
+  uncommon: "bg-uncommon-dark/65 hover:bg-uncommon-dark",
+  rare: "bg-rare-dark/65 hover:bg-rare-dark",
+  epic: "bg-epic-dark/65 hover:bg-epic-dark",
+  legendary: "bg-legendary-dark/65 hover:bg-legendary-dark",
+  mythic: "bg-mythic-dark/65 hover:bg-mythic-dark",
+  ruby: "bg-ruby-dark/65 hover:bg-ruby-dark",
+  diamond: "bg-diamond-dark/65 hover:bg-diamond-dark",
 }
 
 // ── Categories ──────────────────────────────────────────────────

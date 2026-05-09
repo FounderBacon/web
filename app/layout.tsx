@@ -61,7 +61,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     >
       <body className="m-0 p-0 overflow-x-hidden container bg-background text-foreground">
         <FeatureProvider initial={features}>
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
             <RouteGuard>
               {children}
             </RouteGuard>

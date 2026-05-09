@@ -2,17 +2,27 @@
   "navbar": {
     "login": "Connexion",
     "search": "Recherche",
-    "API": "API"
+    "API": "API",
+    "changelog": "Changelog",
+    "discord": "Discord"
   },
   "footer": {
     "tagline": "Cree par un Founder, pour la communaute.",
-    "projects": "Projets",
-    "apiDocs": "API Docs",
+    "browse": "Explorer",
+    "resources": "Ressources",
+    "community": "Communaute",
+    "weapons": "Armes",
+    "traps": "Pieges",
+    "heroes": "Heros",
+    "searchHub": "Recherche",
+    "apiDocs": "Docs API",
+    "changelog": "Changelog",
+    "roadmap": "Roadmap",
     "status": "Statut",
-    "privacy": "Politique de confidentialite",
-    "social": "Social",
+    "discord": "Discord",
     "twitter": "Twitter / X",
     "github": "GitHub",
+    "privacy": "Confidentialite",
     "contact": "Contact"
   },
   "home": {
@@ -63,7 +73,12 @@
     "suggestTwitter": "Nous tweeter",
     "ctaFinalTitle": "PRET A CONSTRUIRE ?",
     "ctaFinalSubtitle": "Cree par un Founder, pour la communaute.",
-    "ctaFinalButton": "COMMENCER"
+    "ctaFinalButton": "COMMENCER",
+    "companion": "Votre compagnon pour Fortnite Save the World armes, perks et bien plus",
+    "breadcrumb": "fortnite {primary://} save the world {primary://} v40.20",
+    "seasonTitle": "Storm King",
+    "trendingWeekly": "Tendances de la semaine",
+    "browseAll": "Voir tout"
   },
   "search": {
     "title": "Rechercher des armes",
