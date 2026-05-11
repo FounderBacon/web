@@ -2,10 +2,11 @@ import type { MetadataRoute } from "next"
 import { locales } from "@/lib/i18n"
 
 const DOMAIN = "https://founderbacon.com"
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.founderbacon.com"
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")
 
 async function fetchWeaponSlugs(): Promise<{ type: string; slug: string }[]> {
   const slugs: { type: string; slug: string }[] = []
+  if (!API_URL) return slugs
 
   try {
     const [ranged, melee] = await Promise.all([

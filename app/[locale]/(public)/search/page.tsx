@@ -20,18 +20,10 @@ export default async function SearchHubPage({ params }: { params: Promise<{ loca
 
   // Fetch compteurs cote serveur (fallback silencieux si API down)
   let counters: ItemCounters | null = null
-  console.log("[search] API_URL =", process.env.NEXT_PUBLIC_API_URL)
   try {
     counters = await fetchCounters()
-    console.log("[search] counters OK", counters)
-  } catch (e) {
-    const err = e as { status?: number; message?: string; response?: { data?: unknown; headers?: unknown } }
-    console.log("[search] counters FAIL", {
-      status: err.status,
-      message: err.message,
-      data: err.response?.data,
-      headers: err.response?.headers,
-    })
+  } catch {
+    // API down : on affiche sans compteurs
   }
 
   return (
