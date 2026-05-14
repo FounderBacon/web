@@ -7,7 +7,8 @@ import { SectionContainer } from "@/components/public/SectionContainer"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
 import { fetchRoadmap } from "@/lib/api/roadmap"
 import { STATUS_BADGE, type RoadmapMilestone } from "@/lib/data/roadmap"
-import { isValidLocale } from "@/lib/i18n"
+import { isValidLocale, type Locale } from "@/lib/i18n"
+import { pageAlternates } from "@/lib/seo"
 
 // ISR : revalide toutes les 5 minutes (la roadmap change rarement)
 export const revalidate = 300
