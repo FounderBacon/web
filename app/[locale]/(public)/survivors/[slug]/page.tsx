@@ -6,7 +6,10 @@ import { SectionContainer } from "@/components/public/SectionContainer"
 import { SurvivorViewTracker } from "@/components/public/SurvivorViewTracker"
 import { fetchSurvivor } from "@/lib/api/survivors"
 import { RARITY_BORDER, RARITY_TEXT } from "@/lib/constants"
-import { isValidLocale } from "@/lib/i18n"
+import { isValidLocale, type Locale } from "@/lib/i18n"
+import { breadcrumbSchema, thingPageSchema } from "@/lib/jsonld"
+import { pageAlternates } from "@/lib/seo"
+import { JsonLd } from "@/components/common/JsonLd"
 
 export const dynamic = "force-dynamic"
 
@@ -15,15 +18,18 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params
+  const { locale: raw, slug } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  const alternates = pageAlternates(locale, `/survivors/${slug}`)
   try {
     const s = await fetchSurvivor(slug)
     return {
       title: s.name,
       description: `${s.name}, a tier ${s.tier} ${s.rarity} survivor from Fortnite Save the World.`,
+      alternates,
     }
   } catch {
-    return { title: "Survivor" }
+    return { title: "Survivor", alternates }
   }
 }
 
@@ -41,8 +47,25 @@ export default async function SurvivorDetailPage({ params }: PageProps) {
   const rarityClass = RARITY_TEXT[survivor.rarity] ?? "text-muted-foreground"
   const accent = RARITY_BORDER[survivor.rarity] ?? "border-l-border"
 
+  const survivorUrl = `/${locale}/survivors/${slug}`
+
   return (
     <>
+      <JsonLd
+        data={[
+          thingPageSchema({
+            name: survivor.name,
+            description: `${survivor.name}, a tier ${survivor.tier} ${survivor.rarity} survivor from Fortnite: Save the World.`,
+            url: survivorUrl,
+            category: "Survivor",
+          }),
+          breadcrumbSchema([
+            { name: "Home", url: `/${locale}` },
+            { name: "Survivors", url: `/${locale}/search/survivors` },
+            { name: survivor.name, url: survivorUrl },
+          ]),
+        ]}
+      />
       <SurvivorViewTracker slug={slug} />
 
       <div className="border-b border-border/50 bg-background px-4 py-3 sm:px-6">

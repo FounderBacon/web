@@ -50,6 +50,8 @@ const akkordeonThirteen = localFont({
   variable: "--font-akkordeon-13",
 })
 
+const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")
+
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const features = await fetchFeatures()
 
@@ -59,6 +61,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       className={`${poppins.variable} ${headingNow.variable} ${burbank.variable} ${akkordeonEight.variable} ${akkordeonNine.variable} ${akkordeonTen.variable} ${akkordeonEleven.variable} ${akkordeonTwelve.variable} ${akkordeonThirteen.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        {API_ORIGIN && <link rel="preconnect" href={API_ORIGIN} crossOrigin="anonymous" />}
+        <link rel="preconnect" href="https://cdn.founderbacon.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://cdn.founderbacon.com" />
+      </head>
       <body className="m-0 p-0 overflow-x-hidden container bg-background text-foreground">
         <FeatureProvider initial={features}>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>

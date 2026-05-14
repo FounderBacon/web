@@ -5,10 +5,16 @@ import { SectionContainer } from "@/components/public/SectionContainer"
 import { SurvivorsTabs } from "@/components/public/SurvivorsTabs"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n"
+import { pageAlternates } from "@/lib/seo"
 
-export const metadata: Metadata = {
-  title: "Survivors — FounderBacon",
-  description: "Browse all survivors from Fortnite Save the World with their rarities, tiers and level ranges.",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  return {
+    title: "Survivors — FounderBacon",
+    description: "Browse all survivors from Fortnite Save the World with their rarities, tiers and level ranges.",
+    alternates: pageAlternates(locale, "/search/survivors"),
+  }
 }
 
 interface PageProps {

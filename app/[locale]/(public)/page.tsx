@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
+import { JsonLd } from "@/components/common/JsonLd";
 import { LandingPage } from "@/components/public/LandingPage";
 import { TrendingWeekly } from "@/components/public/TrendingWeekly";
 import { UpdatesSection } from "@/components/public/UpdatesSection";
@@ -9,6 +10,7 @@ import { SkeletonTrendingList, SkeletonUpdatesSection } from "@/components/ui/sk
 import { cleanVentureName, fetchCurrentVenture, type VentureWeek } from "@/lib/api/ventures";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { I18nText } from "@/lib/i18n-format";
+import { softwareAppSchema, websiteSchema } from "@/lib/jsonld";
 import { isBeforeLaunch } from "@/lib/landing";
 
 // ISR : la home est regeneree en cache cote serveur toutes les 5 minutes.
@@ -42,17 +44,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "FounderBacon",
-  url: "https://founderbacon.com",
-  description: "The first free, open REST API for Fortnite: Save the World. Every weapon, every stat, every perk, every crafting recipe.",
-  applicationCategory: "DeveloperApplication",
-  operatingSystem: "All",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-};
-
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isValidLocale(locale)) return null;
@@ -78,7 +69,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={[websiteSchema(locale as Locale), softwareAppSchema(locale as Locale)]} />
       <h1 className="sr-only">{TITLE_BY_LOCALE[locale] ?? TITLE_BY_LOCALE.en}</h1>
       <div className="relative w-full overflow-hidden md:h-[900px]">
         <Image src="/image/bg_home.png" alt="" fill priority sizes="100vw" className="object-cover blur-sm" />

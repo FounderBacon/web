@@ -4,11 +4,17 @@ import { SearchPageHeader } from "@/components/public/SearchPageHeader"
 import { SectionContainer } from "@/components/public/SectionContainer"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n"
+import { pageAlternates } from "@/lib/seo"
 import { fetchCounters, type ItemCounters } from "@/lib/api/weapons"
 
-export const metadata: Metadata = {
-  title: "Heroes — FounderBacon",
-  description: "Browse all 396+ heroes from Fortnite Save the World with their classes, perks, and abilities.",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  return {
+    title: "Heroes — FounderBacon",
+    description: "Browse all 396+ heroes from Fortnite Save the World with their classes, perks, and abilities.",
+    alternates: pageAlternates(locale, "/search/heroes"),
+  }
 }
 
 export const dynamic = "force-dynamic"

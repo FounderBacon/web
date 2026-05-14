@@ -5,12 +5,18 @@ import { notFound } from "next/navigation"
 import { entrySlug, fetchChangelog, type ChangelogCategory, type ChangelogEntry } from "@/lib/api/changelog"
 import { RARITY_BORDER, RARITY_DECO } from "@/lib/constants"
 import { isValidLocale, type Locale } from "@/lib/i18n"
+import { pageAlternates } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
 
-export const metadata: Metadata = {
-  title: "Changelog",
-  description: "FounderBacon changelog — every update, fix, and new feature.",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  return {
+    title: "Changelog",
+    description: "FounderBacon changelog — every update, fix, and new feature.",
+    alternates: pageAlternates(locale, "/changelog"),
+  }
 }
 
 const CATEGORY_ACCENT: Record<ChangelogCategory, { text: string; bg: string; dot: string }> = {

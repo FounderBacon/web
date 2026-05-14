@@ -6,6 +6,9 @@ import { notFound } from "next/navigation"
 import { fetchChangelogBySlug, type ChangelogCategory, type ChangelogItem } from "@/lib/api/changelog"
 import { RARITY_DECO } from "@/lib/constants"
 import { isValidLocale, type Locale } from "@/lib/i18n"
+import { articleSchema, breadcrumbSchema } from "@/lib/jsonld"
+import { pageAlternates } from "@/lib/seo"
+import { JsonLd } from "@/components/common/JsonLd"
 
 export const dynamic = "force-dynamic"
 
@@ -66,15 +69,18 @@ function formatLongDate(iso: string, locale: Locale): string {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; version: string }> }): Promise<Metadata> {
-  const { version: slug } = await params
+  const { locale: raw, version: slug } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  const alternates = pageAlternates(locale, `/changelog/${slug}`)
   try {
     const entry = await fetchChangelogBySlug(slug)
     return {
       title: `v${entry.version} — ${entry.title}`,
       description: entry.summary,
+      alternates,
     }
   } catch {
-    return { title: `Changelog — ${slug}` }
+    return { title: `Changelog — ${slug}`, alternates }
   }
 }
 
@@ -116,9 +122,27 @@ export default async function ChangelogVersionPage({ params }: PageProps) {
 
   const totalItems = entry.items.length
   const versionColor = (entry.rarity && RARITY_DECO[entry.rarity]) ?? "text-primary"
+  const entryUrl = `/${locale}/changelog/${slug}`
 
   return (
-    <article className="mx-auto max-w-5xl px-6 py-12 md:py-20">
+    <>
+      <JsonLd
+        data={[
+          articleSchema({
+            title: `v${entry.version} — ${entry.title}`,
+            description: entry.summary,
+            url: entryUrl,
+            datePublished: entry.releaseDate,
+            dateModified: entry.updatedAt,
+          }),
+          breadcrumbSchema([
+            { name: "Home", url: `/${locale}` },
+            { name: "Changelog", url: `/${locale}/changelog` },
+            { name: `v${entry.version}`, url: entryUrl },
+          ]),
+        ]}
+      />
+      <article className="mx-auto max-w-5xl px-6 py-12 md:py-20">
       <Link href={`/${locale}/changelog`} className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
         <ArrowLeft className="size-4" />
         Back to changelog
@@ -277,5 +301,6 @@ export default async function ChangelogVersionPage({ params }: PageProps) {
         </footer>
       )}
     </article>
+    </>
   )
 }

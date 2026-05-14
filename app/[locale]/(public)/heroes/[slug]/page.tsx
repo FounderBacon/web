@@ -10,6 +10,9 @@ import { fetchHero, type HeroAbility, type HeroDetail, type HeroPerk } from "@/l
 import { abilityIcon, perkIcon, teamPerkIcon } from "@/lib/cdn";
 import { RARITY_BORDER, RARITY_DECO, RARITY_TEXT } from "@/lib/constants";
 import { isValidLocale, type Locale } from "@/lib/i18n";
+import { breadcrumbSchema, thingPageSchema } from "@/lib/jsonld";
+import { pageAlternates } from "@/lib/seo";
+import { JsonLd } from "@/components/common/JsonLd";
 
 export const dynamic = "force-dynamic";
 
@@ -18,15 +21,18 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale: raw, slug } = await params;
+  const locale: Locale = isValidLocale(raw) ? raw : "en";
+  const alternates = pageAlternates(locale, `/heroes/${slug}`);
   try {
     const hero = await fetchHero(slug);
     return {
       title: hero.name,
       description: hero.description || `${hero.name}, a ${hero.rarity} ${hero.heroClass} hero from Fortnite Save the World.`,
+      alternates,
     };
   } catch {
-    return { title: "Hero" };
+    return { title: "Hero", alternates };
   }
 }
 
@@ -185,8 +191,25 @@ export default async function HeroDetailPage({ params }: PageProps) {
   const accent = RARITY_BORDER[hero.rarity] ?? "border-l-border";
   const rarityDecoColor = RARITY_DECO[hero.rarity] ?? "text-primary";
 
+  const heroUrl = `/${locale}/heroes/${slug}`;
+
   return (
     <>
+      <JsonLd
+        data={[
+          thingPageSchema({
+            name: hero.name,
+            description: hero.description || `${hero.name}, a ${hero.rarity} ${hero.heroClass} hero from Fortnite: Save the World.`,
+            url: heroUrl,
+            category: hero.heroClass,
+          }),
+          breadcrumbSchema([
+            { name: "Home", url: `/${locale}` },
+            { name: "Heroes", url: `/${locale}/search/heroes` },
+            { name: hero.name, url: heroUrl },
+          ]),
+        ]}
+      />
       <HeroViewTracker slug={slug} />
 
       <SectionContainer className="mx-auto max-w-7xl px-4 py-8 md:px-10 md:py-12">

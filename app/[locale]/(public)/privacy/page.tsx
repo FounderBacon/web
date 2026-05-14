@@ -2,11 +2,17 @@ import type { Metadata } from "next"
 import { readFile } from "fs/promises"
 import { join } from "path"
 import Markdown from "react-markdown"
-import { getDictionary, isValidLocale } from "@/lib/i18n"
+import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n"
+import { pageAlternates } from "@/lib/seo"
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "FounderBacon privacy policy. Learn how we handle your data.",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  return {
+    title: "Privacy Policy",
+    description: "FounderBacon privacy policy. Learn how we handle your data.",
+    alternates: pageAlternates(locale, "/privacy"),
+  }
 }
 
 export default async function PrivacyPage({ params }: { params: Promise<{ locale: string }> }) {

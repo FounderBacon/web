@@ -1,14 +1,20 @@
 import type { Metadata } from "next"
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n"
+import { pageAlternates } from "@/lib/seo"
 import { SearchPageHeader } from "@/components/public/SearchPageHeader"
 import { SearchTrapsView } from "@/components/public/SearchTrapsView"
 import { SectionContainer } from "@/components/public/SectionContainer"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
 import { fetchCounters, type ItemCounters } from "@/lib/api/weapons"
 
-export const metadata: Metadata = {
-  title: "Search Traps",
-  description: "Search and browse all traps from Fortnite: Save the World.",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  return {
+    title: "Search Traps",
+    description: "Search and browse all traps from Fortnite: Save the World.",
+    alternates: pageAlternates(locale, "/search/traps"),
+  }
 }
 
 export const dynamic = "force-dynamic"

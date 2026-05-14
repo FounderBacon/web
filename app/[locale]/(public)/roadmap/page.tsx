@@ -84,9 +84,14 @@ function MilestoneMarker({ ms }: { ms: RoadmapMilestone }) {
   )
 }
 
-export const metadata: Metadata = {
-  title: "Roadmap",
-  description: "FounderBacon development roadmap — what's live, what's next, and what's planned.",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  return {
+    title: "Roadmap",
+    description: "FounderBacon development roadmap — what's live, what's next, and what's planned.",
+    alternates: pageAlternates(locale, "/roadmap"),
+  }
 }
 
 export default async function RoadmapPage({ params }: { params: Promise<{ locale: string }> }) {

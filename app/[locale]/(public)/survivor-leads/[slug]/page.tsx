@@ -7,7 +7,10 @@ import { SurvivorLeadViewTracker } from "@/components/public/SurvivorLeadViewTra
 import { AssetImage } from "@/components/ui/asset-image"
 import { fetchSurvivorLead } from "@/lib/api/survivor-leads"
 import { RARITY_BORDER, RARITY_TEXT } from "@/lib/constants"
-import { isValidLocale } from "@/lib/i18n"
+import { isValidLocale, type Locale } from "@/lib/i18n"
+import { breadcrumbSchema, thingPageSchema } from "@/lib/jsonld"
+import { pageAlternates } from "@/lib/seo"
+import { JsonLd } from "@/components/common/JsonLd"
 
 export const dynamic = "force-dynamic"
 
@@ -16,15 +19,18 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params
+  const { locale: raw, slug } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  const alternates = pageAlternates(locale, `/survivor-leads/${slug}`)
   try {
     const lead = await fetchSurvivorLead(slug)
     return {
       title: lead.name,
       description: lead.description || `${lead.name}, a ${lead.rarity} lead survivor for the ${lead.squadType} squad.`,
+      alternates,
     }
   } catch {
-    return { title: "Survivor lead" }
+    return { title: "Survivor lead", alternates }
   }
 }
 
@@ -42,8 +48,26 @@ export default async function SurvivorLeadDetailPage({ params }: PageProps) {
   const rarityClass = RARITY_TEXT[lead.rarity] ?? "text-muted-foreground"
   const accent = RARITY_BORDER[lead.rarity] ?? "border-l-border"
 
+  const leadUrl = `/${locale}/survivor-leads/${slug}`
+
   return (
     <>
+      <JsonLd
+        data={[
+          thingPageSchema({
+            name: lead.name,
+            description: lead.description || `${lead.name}, a ${lead.rarity} lead survivor for the ${lead.squadType} squad in Fortnite: Save the World.`,
+            url: leadUrl,
+            image: lead.iconUrlLarge ?? lead.iconUrl ?? undefined,
+            category: "SurvivorLead",
+          }),
+          breadcrumbSchema([
+            { name: "Home", url: `/${locale}` },
+            { name: "Survivors", url: `/${locale}/search/survivors` },
+            { name: lead.name, url: leadUrl },
+          ]),
+        ]}
+      />
       <SurvivorLeadViewTracker slug={slug} />
 
       <div className="border-b border-border/50 bg-background px-4 py-3 sm:px-6">
