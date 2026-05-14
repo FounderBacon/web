@@ -1,4 +1,10 @@
 {
+  "envBanner": {
+    "title": "Test environment",
+    "description": "Data may be incomplete or inaccurate. Do not rely on it.",
+    "liveLink": "Go to live version",
+    "dismiss": "Dismiss"
+  },
   "navbar": {
     "login": "Login",
     "search": "Search",

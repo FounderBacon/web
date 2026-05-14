@@ -7,7 +7,9 @@
       "WebSearch",
       "WebFetch(domain:dev-api.founderbacon.com)",
       "mcp__ide__getDiagnostics",
-      "Bash(\"C:/Program Files/Git/bin/git.exe\" diff --stat main...HEAD)"
+      "Bash(\"C:/Program Files/Git/bin/git.exe\" diff --stat main...HEAD)",
+      "Bash(git *)",
+      "Bash(curl.exe *)"
     ]
   }
 }

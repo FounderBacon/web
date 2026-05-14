@@ -42,3 +42,11 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+.claude/*
+
+# changelog drafts (brouillons locaux generes par /changelog)
+.changelog/
+
+.env*.local
+.vercel

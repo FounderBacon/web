@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import { locales, isValidLocale, type Locale } from "@/lib/i18n"
+import { isProduction } from "@/lib/env"
+import { EnvironmentBanner } from "@/components/common/EnvironmentBanner"
 import { notFound } from "next/navigation"
 
 const DOMAIN = "https://founderbacon.com"
@@ -103,11 +105,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       description: seo.twitterDescription,
       images: ["/opengraph_image.png"],
     },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
-    },
+    robots: isProduction()
+      ? {
+          index: true,
+          follow: true,
+          googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
+        }
+      : { index: false, follow: false, googleBot: { index: false, follow: false } },
     alternates: {
       canonical: `${DOMAIN}/${locale}`,
       languages: {
@@ -127,5 +131,10 @@ export default async function LocaleLayout({ children, params }: Readonly<{ chil
 
   if (!isValidLocale(locale)) notFound()
 
-  return children
+  return (
+    <>
+      {children}
+      <EnvironmentBanner locale={locale} />
+    </>
+  )
 }

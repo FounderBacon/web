@@ -1,4 +1,10 @@
 {
+  "envBanner": {
+    "title": "Environnement de test",
+    "description": "Les donnees peuvent etre incompletes ou inexactes. Ne pas s'y fier.",
+    "liveLink": "Aller sur la version officielle",
+    "dismiss": "Fermer"
+  },
   "navbar": {
     "login": "Connexion",
     "search": "Recherche",
