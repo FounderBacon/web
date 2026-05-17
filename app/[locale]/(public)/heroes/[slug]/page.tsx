@@ -1,4 +1,4 @@
-import { Activity, ChevronLeft, Clock, Crosshair, Hourglass, Star, Target, Zap } from "lucide-react";
+import { Activity, ChevronLeft, Clock, Crosshair, Crown, Hourglass, Star, Target, UserPlus, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -103,7 +103,7 @@ function StatPill({ icon: Icon, label, value }: { icon: LucideIcon; label: strin
 }
 
 // ── Colonne info droite (alignée sur InfoColumn weapon) ──────────
-function InfoColumn({ hero }: { hero: HeroDetail }) {
+function InfoColumn({ hero, locale, slug }: { hero: HeroDetail; locale: Locale; slug: string }) {
   const rarityClass = RARITY_TEXT[hero.rarity] ?? "text-muted-foreground";
   const rarityDeco = RARITY_DECO[hero.rarity] ?? "text-primary";
   const stars = hero.stars ?? 0;
@@ -129,6 +129,24 @@ function InfoColumn({ hero }: { hero: HeroDetail }) {
 
       {/* Description */}
       {hero.description && <p className="text-sm italic leading-relaxed text-muted-foreground">&ldquo;{hero.description}&rdquo;</p>}
+
+      {/* Loadout builder : pre-rempli avec ce hero via les params c/s de l'URL */}
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href={`/${locale}/hero-loadout?c=${slug}`}
+          className="flex items-center justify-center gap-1.5 border border-border/50 bg-card/40 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-card"
+        >
+          <Crown className="size-3.5" />
+          Commander
+        </Link>
+        <Link
+          href={`/${locale}/hero-loadout?s=${slug}`}
+          className="flex items-center justify-center gap-1.5 border border-border/50 bg-card/40 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-card"
+        >
+          <UserPlus className="size-3.5" />
+          Support
+        </Link>
+      </div>
 
       <div className="h-px w-full bg-border/50" />
 
@@ -248,7 +266,7 @@ export default async function HeroDetailPage({ params }: PageProps) {
 
           {/* Right : Info column */}
           <aside className="md:sticky md:top-20 md:self-start">
-            <InfoColumn hero={hero} />
+            <InfoColumn hero={hero} locale={locale} slug={slug} />
           </aside>
         </div>
       </SectionContainer>

@@ -1,11 +1,14 @@
 "use client"
 
-import { RotateCcw, Users } from "lucide-react"
+import { ExternalLink, RotateCcw, Users } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { LoadoutSlot } from "@/components/loadout/LoadoutSlot"
 import { TeamPerkPicker } from "@/components/loadout/TeamPerkPicker"
 import { Sheet, SheetBody, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n"
 import { hasAnyLoadout } from "@/lib/loadout/selectors"
 import { useLoadout } from "@/lib/loadout/store"
 
@@ -14,7 +17,17 @@ interface LoadoutDrawerProps {
   onOpenChange: (open: boolean) => void
 }
 
+// Extrait la locale du pathname Next ("/fr/heroes/..." -> "fr"). Fallback default.
+function localeFromPath(pathname: string): Locale {
+  const seg = pathname.split("/")[1] ?? ""
+  return isValidLocale(seg) ? seg : defaultLocale
+}
+
 export function LoadoutDrawer({ open, onOpenChange }: LoadoutDrawerProps) {
+  const pathname = usePathname()
+  const locale = localeFromPath(pathname)
+  const onBuilderPage = pathname.startsWith(`/${locale}/hero-loadout`)
+
   const commander = useLoadout((s) => s.commander)
   const support = useLoadout((s) => s.support)
   const teamPerks = useLoadout((s) => s.teamPerks)
@@ -104,19 +117,31 @@ export function LoadoutDrawer({ open, onOpenChange }: LoadoutDrawerProps) {
           </section>
         </SheetBody>
 
-        <SheetFooter>
-          <p className="text-xs text-muted-foreground">
-            {filled ? "Loadout active" : "No loadout active"}
-          </p>
-          <button
-            type="button"
-            onClick={clear}
-            disabled={!filled}
-            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <RotateCcw className="size-3" />
-            Clear all
-          </button>
+        <SheetFooter className="flex-col items-stretch gap-3">
+          {!onBuilderPage && (
+            <Link
+              href={`/${locale}/hero-loadout`}
+              onClick={() => onOpenChange(false)}
+              className="flex items-center justify-center gap-2 border border-border/50 bg-card/40 p-2.5 text-xs font-semibold uppercase tracking-wider text-foreground transition-colors hover:bg-card"
+            >
+              <ExternalLink className="size-3.5" />
+              Open full builder
+            </Link>
+          )}
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              {filled ? "Loadout active" : "No loadout active"}
+            </p>
+            <button
+              type="button"
+              onClick={clear}
+              disabled={!filled}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <RotateCcw className="size-3" />
+              Clear all
+            </button>
+          </div>
         </SheetFooter>
         </TooltipProvider>
       </SheetContent>

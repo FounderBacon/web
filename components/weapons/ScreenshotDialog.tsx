@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useRef, useState, useEffect, useMemo, useCallback } from "react"
+import React, { useRef, useState, useEffect, useMemo } from "react"
+import { usePreviewScale } from "@/components/share/screenshot/usePreviewScale"
 import type { WeaponDetail, RangedWeaponDetail, TierData, Perk, PerkSlot } from "@/lib/types/weapon"
 import type { CalculatedStats } from "@/lib/types/calculate"
 import { parsePerkBonuses, formatBonusValue } from "@/lib/perks"
@@ -10,6 +11,7 @@ import { formatNumber } from "@/lib/format"
 import type { LoadoutHeroSlot, LoadoutTeamPerk } from "@/lib/loadout/store"
 import { qrUrl } from "@/lib/api/qr"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
+import { ScreenshotQrCard } from "@/components/share/screenshot/ScreenshotQrCard"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Camera, Download, XIcon } from "lucide-react"
@@ -53,9 +55,8 @@ export function ScreenshotDialog({
   sharePath,
 }: ScreenshotDialogProps) {
   const templateRef = useRef<HTMLDivElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
   const [downloading, setDownloading] = useState(false)
-  const [previewScale, setPreviewScale] = useState(0.5)
+  const previewScale = usePreviewScale(open)
   const [weaponIconBase64, setWeaponIconBase64] = useState<string | null>(null)
   // Cache des icones loadout en base64 (key = URL CDN)
   const [loadoutIcons, setLoadoutIcons] = useState<Record<string, string>>({})
@@ -194,23 +195,6 @@ export function ScreenshotDialog({
     }
   }, [open, sharePath])
 
-  const updateScale = useCallback(() => {
-    if (containerRef.current) {
-      const width = containerRef.current.clientWidth
-      setPreviewScale(width / 1920)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!open) return
-    const timer = setTimeout(updateScale, 50)
-    window.addEventListener("resize", updateScale)
-    return () => {
-      clearTimeout(timer)
-      window.removeEventListener("resize", updateScale)
-    }
-  }, [open, updateScale])
-
   async function handleDownload() {
     if (!templateRef.current) return
     setDownloading(true)
@@ -263,16 +247,15 @@ export function ScreenshotDialog({
           </div>
         </div>
 
-        {/* Cadre de la preview : border violet + tag aspect-ratio */}
+        {/* Cadre preview : dimensions calculees pour rester dans le viewport (largeur + hauteur) */}
         <div
-          ref={containerRef}
           className="relative overflow-hidden rounded-lg"
           style={{
-            width: "min(92vw, 1600px)",
+            width: 1920 * previewScale,
+            height: 1080 * previewScale,
             border: "1px solid #4A2376",
           }}
         >
-          {/* Tag "1920 × 1080" en overlay haut-droit */}
           <div className="pointer-events-none absolute right-3 top-3 z-10 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-widest backdrop-blur-sm" style={{ border: "1px solid #4A2376", background: "rgba(17, 8, 27, 0.7)", color: "#CAB0E8" }}>
             1920 × 1080
           </div>
@@ -284,8 +267,7 @@ export function ScreenshotDialog({
               </div>
             </div>
           )}
-          <div className="overflow-hidden" style={{ height: 1080 * previewScale }}>
-            <div style={{ transform: `scale(${previewScale})`, transformOrigin: "top left", width: 1920, height: 1080 }}>
+          <div style={{ transform: `scale(${previewScale})`, transformOrigin: "top left", width: 1920, height: 1080 }}>
               <ScreenshotTemplate
                 ref={templateRef}
                 weapon={weapon}
@@ -304,7 +286,6 @@ export function ScreenshotDialog({
                 qrSrc={qrDataUrl}
                 unknownIconSrc={unknownIconBase64}
               />
-            </div>
           </div>
         </div>
       </DialogContent>
@@ -652,8 +633,8 @@ function ScreenshotTemplateInner(
 
             {/* Right rail : Perks (hauteur naturelle) + QR section etendue (flex-1) */}
             <div className="flex w-87.5 shrink-0 flex-col gap-3">
-              {/* Perks : taille naturelle */}
-              <div className="shrink-0 overflow-hidden rounded-lg" style={{ border: "1px solid #4A2376", background: "rgba(49, 23, 79, 0.4)" }}>
+              {/* Perks : prend tout l'espace au-dessus du QR (qui est shrink-0 h-100) */}
+              <div className="flex flex-1 flex-col overflow-hidden rounded-lg" style={{ border: "1px solid #4A2376", background: "rgba(49, 23, 79, 0.4)" }}>
                 <div className="px-5 py-3" style={{ borderBottom: "1px solid #4A2376", background: "#31174F" }}>
                   <p className="text-lg font-semibold">Perks</p>
                 </div>
@@ -695,22 +676,8 @@ function ScreenshotTemplateInner(
                 )}
               </div>
 
-              {/* QR : card "poster" avec QR proportionne a la section */}
-              {qrSrc && (
-                <div className="flex flex-1 flex-col overflow-hidden rounded-lg" style={{ border: "1px solid #4A2376", background: "rgba(49, 23, 79, 0.4)" }}>
-                  <div className="flex items-center justify-between px-5 py-2.5" style={{ borderBottom: "1px solid #4A2376", background: "#31174F" }}>
-                    <div className="flex flex-col">
-                      <p className="text-base font-semibold leading-tight">Share Build</p>
-                      <p className="text-[10px] uppercase tracking-widest" style={{ color: "#CAB0E8" }}>Scan with your phone</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-1 items-center justify-center p-3">
-                    <div className="flex size-56 items-center justify-center rounded-lg bg-white p-2.5" style={{ boxShadow: "0 4px 24px rgba(149, 98, 208, 0.3)" }}>
-                      <img src={qrSrc} alt="" className="size-full" />
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* QR : card a taille fixe (calibree sur le cas 4 perks max) */}
+              <ScreenshotQrCard qrSrc={qrSrc} />
             </div>
 
       </div>
