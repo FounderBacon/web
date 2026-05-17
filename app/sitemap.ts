@@ -67,6 +67,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${DOMAIN}/${locale}/search/traps`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${DOMAIN}/${locale}/search/heroes`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${DOMAIN}/${locale}/search/survivors`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
+    { url: `${DOMAIN}/${locale}/hero-loadout`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${DOMAIN}/${locale}/changelog`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${DOMAIN}/${locale}/roadmap`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${DOMAIN}/${locale}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },

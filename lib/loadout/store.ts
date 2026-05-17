@@ -43,6 +43,7 @@ interface LoadoutActions {
   setCommander: (slot: LoadoutHeroSlot | null) => void
   setSupport: (index: number, slot: LoadoutHeroSlot | null) => void
   toggleTeamPerk: (perk: LoadoutTeamPerk) => void
+  setTeamPerk: (perk: LoadoutTeamPerk | null) => void
   setOffensive: (value: number) => void
   clear: () => void
 }
@@ -69,15 +70,17 @@ export const useLoadout = create<LoadoutState & LoadoutActions>()(
           return { support: next }
         }),
 
+      // Single select : un seul team perk actif a la fois.
+      // Toggle : si meme perkId clique -> deselect ; sinon -> remplace.
       toggleTeamPerk: (perk) =>
         set((state) => {
-          const exists = state.teamPerks.some((p) => p.perkId === perk.perkId)
-          return {
-            teamPerks: exists
-              ? state.teamPerks.filter((p) => p.perkId !== perk.perkId)
-              : [...state.teamPerks, perk],
-          }
+          const current = state.teamPerks[0]
+          const isSame = current?.perkId === perk.perkId
+          return { teamPerks: isSame ? [] : [perk] }
         }),
+
+      // Set direct (utilise par le chargement depuis URL/preset).
+      setTeamPerk: (perk) => set({ teamPerks: perk ? [perk] : [] }),
 
       setOffensive: (value) => set({ offensive: Math.max(0, value | 0) }),
 
