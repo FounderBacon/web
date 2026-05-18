@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { AlertTriangle, X } from "lucide-react"
+import { AlertTriangle, MessageSquare, X } from "lucide-react"
+import Link from "next/link"
 import { ENVIRONMENT } from "@/lib/env"
+import type { Locale } from "@/lib/i18n"
 import type en from "@/lang/en.json"
 
 const STORAGE_KEY = "fbcn:env-banner-dismissed"
@@ -21,9 +23,10 @@ const ENV_COLOR: Record<typeof ENVIRONMENT, string> = {
 
 interface Props {
   t: typeof en.envBanner
+  locale: Locale
 }
 
-export function EnvironmentBannerClient({ t }: Props) {
+export function EnvironmentBannerClient({ t, locale }: Props) {
   // false par defaut pour eviter un flash en SSR ; on revele apres mount.
   const [visible, setVisible] = useState(false)
 
@@ -66,6 +69,17 @@ export function EnvironmentBannerClient({ t }: Props) {
               {t.liveLink}
             </a>
             .
+          </p>
+          <p className="mt-2 flex items-center gap-1.5 text-muted-foreground">
+            <MessageSquare className="size-3.5 shrink-0" aria-hidden="true" />
+            <span>{t.feedbackPrompt}</span>
+            <Link
+              href={`/${locale}/feedback`}
+              className="font-medium text-primary underline-offset-4 hover:underline"
+              onClick={() => setVisible(false)}
+            >
+              {t.feedbackLink}
+            </Link>
           </p>
         </div>
         <button

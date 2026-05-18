@@ -78,6 +78,9 @@ export function Footer({ locale, dict }: FooterProps) {
             >
               {dict.footer.github}
             </a>
+            <Link href={`/${locale}/feedback`} className={linkClass}>
+              {dict.footer.feedback}
+            </Link>
           </div>
         </div>
 

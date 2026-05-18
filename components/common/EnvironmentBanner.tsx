@@ -6,5 +6,5 @@ import { EnvironmentBannerClient } from "./EnvironmentBannerClient"
 export async function EnvironmentBanner({ locale }: { locale: Locale }) {
   if (isProduction()) return null
   const dict = await getDictionary(locale)
-  return <EnvironmentBannerClient t={dict.envBanner} />
+  return <EnvironmentBannerClient t={dict.envBanner} locale={locale} />
 }
