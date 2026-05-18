@@ -2,7 +2,6 @@
 
 import type { TierData, Perk, PerkSlot } from "@/lib/types/weapon"
 import { useCallback, useRef, useState } from "react"
-import { parsePerkBonuses, formatBonusValue } from "@/lib/perks"
 import { Separator } from "@/components/ui/separator"
 import { RARITY_TEXT } from "@/lib/constants"
 import { HeroBonusSection } from "@/components/weapons/HeroBonusSection"
@@ -66,29 +65,14 @@ export function EffectsColumn({
           ) : (
             <div className="space-y-4">
               {activeEntries.map(({ slot, perk, group }, i) => {
-                const perkBonuses = parsePerkBonuses(perk)
                 const color = RARITY_TEXT[perk.rarity] ?? "text-muted-foreground"
                 const selectedIndex = group.tiers.findIndex((t) => t.perkId === perk.perkId)
                 const maxTier = group.tiers.length - 1
 
                 return (
                   <div key={`${slot.slot}-${perk.perkId}`}>
-                    {/* Nom + bonuses structures ou description fallback */}
-                    <p className={`text-sm font-semibold ${color}`}>{perk.name}</p>
-                    {perkBonuses.length > 0 ? (
-                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-                        {perkBonuses.map((b, j) => (
-                          <span key={j} className="text-xs">
-                            <span className="capitalize text-muted-foreground">{b.stat}: </span>
-                            <span className={b.value > 0 ? "font-semibold text-uncommon-dark dark:text-uncommon" : "font-semibold text-malus-dark dark:text-malus"}>
-                              {formatBonusValue(b)}
-                            </span>
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{perk.description}</p>
-                    )}
+                    {/* Affichage brut : on garde la description verbatim pour preserver le contexte (ex: element fire) */}
+                    <p className={`text-sm font-semibold ${color}`}>{perk.description}</p>
 
                     {/* Slider de tier avec ticks visuels */}
                     {maxTier > 0 && (

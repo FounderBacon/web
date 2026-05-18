@@ -356,11 +356,6 @@ function LoadoutTemplateInner(
                   <p className="text-base uppercase tracking-wider" style={{ color: "#CAB0E8" }}>
                     {commander.heroName}
                   </p>
-                  <p
-                    className={`text-2xl font-bold uppercase leading-tight ${commanderRarityColor}`}
-                  >
-                    {commander.perkName}
-                  </p>
                 </div>
                 <div
                   className="flex items-start gap-3 rounded p-3"
@@ -371,7 +366,7 @@ function LoadoutTemplateInner(
                     alt=""
                     className="size-10 shrink-0 object-contain"
                   />
-                  <p className="text-sm leading-snug" style={{ color: "#CAB0E8" }}>
+                  <p className={`text-lg font-bold leading-snug ${commanderRarityColor}`}>
                     {commander.perkDescription}
                   </p>
                 </div>
@@ -428,13 +423,7 @@ function LoadoutTemplateInner(
                       <p className="truncate text-xs leading-tight" style={{ color: "#CAB0E8" }}>
                         {s.heroName} · <span className="capitalize">{s.rarity}</span>
                       </p>
-                      <p className="truncate text-base font-bold leading-tight text-white">
-                        {s.perkName}
-                      </p>
-                      <p
-                        className="line-clamp-2 text-xs leading-snug"
-                        style={{ color: "#CAB0E8" }}
-                      >
+                      <p className="line-clamp-2 text-sm font-bold leading-snug text-white">
                         {s.perkDescription}
                       </p>
                     </div>

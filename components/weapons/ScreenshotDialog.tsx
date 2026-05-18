@@ -4,7 +4,6 @@ import React, { useRef, useState, useEffect, useMemo } from "react"
 import { usePreviewScale } from "@/components/share/screenshot/usePreviewScale"
 import type { WeaponDetail, RangedWeaponDetail, TierData, Perk, PerkSlot } from "@/lib/types/weapon"
 import type { CalculatedStats } from "@/lib/types/calculate"
-import { parsePerkBonuses, formatBonusValue } from "@/lib/perks"
 import { perkIcon, teamPerkIcon, UNKNOWN_ICON, weaponIconLarge } from "@/lib/cdn"
 import { RARITY_TEXT, STAT_MAX, formatStatName } from "@/lib/constants"
 import { formatNumber } from "@/lib/format"
@@ -561,8 +560,7 @@ function ScreenshotTemplateInner(
                           </div>
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                             <p className="truncate text-sm leading-tight" style={{ color: "#CAB0E8" }}>{commander.heroName} · <span className="capitalize">{commander.rarity}</span></p>
-                            <p className="truncate text-base font-bold leading-tight">{commander.perkName}</p>
-                            <p className="line-clamp-3 text-xs leading-snug" style={{ color: "#CAB0E8" }}>{commander.perkDescription}</p>
+                            <p className="line-clamp-3 text-sm font-semibold leading-snug">{commander.perkDescription}</p>
                           </div>
                         </div>
                       </div>
@@ -582,8 +580,7 @@ function ScreenshotTemplateInner(
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-xs leading-tight" style={{ color: "#CAB0E8" }}>{s.heroName}</p>
-                                <p className="truncate text-sm font-bold leading-tight">{s.perkName}</p>
-                                <p className="line-clamp-2 text-[11px] leading-snug" style={{ color: "#CAB0E8" }}>{s.perkDescription}</p>
+                                <p className="line-clamp-2 text-[11px] font-semibold leading-snug">{s.perkDescription}</p>
                               </div>
                             </div>
                           ))}
@@ -645,7 +642,6 @@ function ScreenshotTemplateInner(
                 ) : (
                   <div className="flex flex-col">
                     {activePerks.map(({ slot, perk }) => {
-                      const perkBonuses = parsePerkBonuses(perk)
                       const tierColor = RARITY_TEXT[perk.rarity] ?? "text-foreground"
                       return (
                         <div key={slot.slot} className="px-5 py-3" style={{ borderBottom: "1px solid #4A2376" }}>
@@ -657,18 +653,8 @@ function ScreenshotTemplateInner(
                               {perk.rarity}
                             </span>
                           </div>
-                          <p className="mt-1.5 text-lg font-bold uppercase leading-tight text-white">{perk.name}</p>
-                          {perkBonuses.length > 0 && (
-                            <p className="mt-1 text-sm leading-snug" style={{ color: "#CAB0E8" }}>
-                              {perkBonuses.map((b, i) => (
-                                <span key={i}>
-                                  {i > 0 && ", "}
-                                  <span className="font-semibold text-white">{formatBonusValue(b)}</span>
-                                  <span> {b.stat}</span>
-                                </span>
-                              ))}
-                            </p>
-                          )}
+                          {/* Description verbatim pour preserver le contexte (ex: element fire) */}
+                          <p className="mt-1.5 text-lg font-bold leading-tight text-white">{perk.description}</p>
                         </div>
                       )
                     })}

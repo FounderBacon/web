@@ -59,6 +59,15 @@ export function formatBonusValue(bonus: PerkBonus): string {
   return bonus.unit === "%" ? `${sign}${bonus.value}%` : `${sign}${bonus.value}`
 }
 
+// Extrait le(s) stat name(s) d'un perk sans la valeur (ex: "+42% Damage" -> "Damage").
+// Sert au picker de perks pour montrer le TYPE de stat, indep du tier choisi.
+// Fallback sur perk.name si on ne sait pas parser.
+export function extractStatLabel(perk: Perk): string {
+  const bonuses = parsePerkBonuses(perk)
+  if (bonuses.length === 0) return perk.name
+  return bonuses.map((b) => b.raw.replace(/^[+-]?[\d.]+%?\s+/, "")).join(" + ")
+}
+
 // ── Bonus calculation (partage entre StatsPanel et DpsCalculator) ──
 
 import { BONUS_TO_STAT } from "@/lib/constants"

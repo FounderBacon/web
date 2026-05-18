@@ -74,10 +74,7 @@ export function LoadoutSlot({ slot, label, kind, onChange }: LoadoutSlotProps) {
               </span>
             </TooltipTrigger>
             <TooltipContent side="left" className="max-w-xs">
-              <div className="flex flex-col gap-1">
-                <p className="font-semibold">{slot.perkName}</p>
-                <p className="text-[11px] leading-snug">{slot.perkDescription}</p>
-              </div>
+              <p className="text-[11px] font-semibold leading-snug">{slot.perkDescription}</p>
             </TooltipContent>
           </Tooltip>
         </button>

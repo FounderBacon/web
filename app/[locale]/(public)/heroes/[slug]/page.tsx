@@ -46,8 +46,7 @@ function PerkCard({ perk, label, primary, accent, rarityColor, kind }: { perk: H
       </div>
       <div className="flex flex-1 flex-col gap-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">{label}</p>
-        <p className={`font-burbank text-2xl uppercase leading-tight md:text-3xl ${primary ? rarityColor : "text-foreground"}`}>{perk.name}</p>
-        <p className="text-base leading-relaxed text-foreground">{perk.description}</p>
+        <p className={`text-base font-semibold leading-relaxed md:text-lg ${primary ? rarityColor : "text-foreground"}`}>{perk.description}</p>
         {perk.magnitude !== null && (
           <p className="text-xs text-muted-foreground">
             Magnitude: <span className="font-medium text-foreground">{perk.magnitude}</span>
