@@ -5,7 +5,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { fetchHeroes, type HeroClass } from "@/lib/api/heroes"
+import { BOOST_SUGGESTIONS, BOOSTS_MAX_LENGTH, fetchHeroes, sanitizeBoostsInput, type HeroClass } from "@/lib/api/heroes"
 import { fetchSurvivors } from "@/lib/api/survivors"
 import { fetchTraps } from "@/lib/api/traps"
 import { fetchMeleeWeapons, fetchRangedWeapons } from "@/lib/api/weapons"
@@ -26,6 +26,7 @@ const FILTER_TREE: Record<string, FilterOption[]> = {
     { key: "weapons", label: "Weapons", children: "weapons" },
     { key: "traps", label: "Traps", children: "traps" },
     { key: "heroes", label: "Heroes", children: "hero-class" },
+    { key: "boosts", label: "Heroes that boost...", children: "boosts-list" },
     { key: "rarity", label: "Rarity", children: "rarity" },
   ],
   weapons: [
@@ -38,6 +39,13 @@ const FILTER_TREE: Record<string, FilterOption[]> = {
     { key: "ninja", label: "Ninja" },
     { key: "outlander", label: "Outlander" },
   ],
+  // Prefixe "boost:" pour distinguer du keyspace categories d'armes
+  // (ex: "assault" existe aussi dans RANGED_CATS). Ces options ne sont PAS
+  // ajoutees au filterPath : clic = remplit l'input pour permettre le freetype.
+  "boosts-list": BOOST_SUGGESTIONS.map((term) => ({
+    key: `boost:${term}`,
+    label: term,
+  })),
   "ranged-cat": [
     { key: "assault", label: "Assault" },
     { key: "sniper", label: "Sniper" },
@@ -86,6 +94,7 @@ type Source = "ranged" | "melee" | "trap" | "hero" | "survivor"
 
 function pathToFilters(path: FilterChip[]): {
   sources: Source[]
+  isBoostMode: boolean
   params: { search?: string; category?: string; placement?: string; heroClass?: HeroClass; rarity?: string }
 } {
   const keys = path.map((p) => p.key)
@@ -99,6 +108,10 @@ function pathToFilters(path: FilterChip[]): {
   if (keys.includes("ranged")) sources = sources.filter((s) => s === "ranged")
   if (keys.includes("melee")) sources = sources.filter((s) => s === "melee")
 
+  // Boost mode : seule la branche heros est interrogee, l'input devient le terme de boost
+  const isBoostMode = keys.includes("boosts")
+  if (isBoostMode) sources = ["hero"]
+
   for (const k of keys) {
     if (RANGED_CATS.has(k) || MELEE_CATS.has(k)) params.category = k
     else if (PLACEMENTS.has(k)) params.placement = k
@@ -106,7 +119,7 @@ function pathToFilters(path: FilterChip[]): {
     else if (RARITIES.has(k)) params.rarity = k
   }
 
-  return { sources, params }
+  return { sources, isBoostMode, params }
 }
 
 interface SearchResult {
@@ -159,20 +172,26 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
       setLoading(true)
       try {
         const search = query.trim()
+        // En boost mode, l'input devient le terme de boost (sanitize cote client
+        // pour matcher la regex back ^[A-Za-z0-9 _-]+$ et eviter un 400).
+        const boostTerm = filterState.isBoostMode ? sanitizeBoostsInput(search) : ""
+        const textSearch = filterState.isBoostMode ? "" : search
+
         const baseParams = {
-          ...(search ? { search } : {}),
+          ...(textSearch ? { search: textSearch } : {}),
           ...(filterState.params.category ? { category: filterState.params.category } : {}),
           ...(filterState.params.rarity ? { rarity: filterState.params.rarity } : {}),
           limit: 20,
         }
         const trapParams = {
-          ...(search ? { search } : {}),
+          ...(textSearch ? { search: textSearch } : {}),
           ...(filterState.params.placement ? { placement: filterState.params.placement } : {}),
           ...(filterState.params.rarity ? { rarity: filterState.params.rarity } : {}),
           limit: 20,
         }
         const heroParams = {
-          ...(search ? { search } : {}),
+          ...(textSearch ? { search: textSearch } : {}),
+          ...(boostTerm ? { boosts: boostTerm } : {}),
           ...(filterState.params.heroClass ? { heroClass: filterState.params.heroClass } : {}),
           ...(filterState.params.rarity ? { rarity: filterState.params.rarity } : {}),
           limit: 20,
@@ -226,6 +245,15 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
 
   function selectFilter(opt: FilterOption) {
     if (opt.disabled) return
+    // Quick-pick boost : remplit l'input au lieu d'ajouter une chip, pour
+    // permettre au user d'editer ensuite ou de taper son propre terme.
+    if (opt.key.startsWith("boost:")) {
+      setQuery(opt.key.slice("boost:".length))
+      inputRef.current?.focus()
+      return
+    }
+    // Entering boost mode : sanitize l'input existant pour matcher la regex back
+    if (opt.key === "boosts") setQuery((prev) => sanitizeBoostsInput(prev))
     setFilterPath((prev) => [...prev, { key: opt.key, label: opt.label }])
     setCurrentMenu(opt.children ?? null)
     inputRef.current?.focus()
@@ -307,9 +335,18 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
             autoFocus
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) =>
+              setQuery(filterState.isBoostMode ? sanitizeBoostsInput(e.target.value) : e.target.value)
+            }
             onKeyDown={handleKeyDown}
-            placeholder={filterPath.length > 0 ? "Refine..." : "Search weapons, traps..."}
+            maxLength={filterState.isBoostMode ? BOOSTS_MAX_LENGTH : undefined}
+            placeholder={
+              filterState.isBoostMode
+                ? "Type a boost (e.g. minigun, crit damage)..."
+                : filterPath.length > 0
+                  ? "Refine..."
+                  : "Search weapons, traps..."
+            }
             className="min-w-20 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
           {loading && (

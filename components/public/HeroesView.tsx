@@ -1,10 +1,18 @@
 "use client"
 
-import { RotateCcw, Search as SearchIcon, SlidersHorizontal, X } from "lucide-react"
+import { RotateCcw, Search as SearchIcon, SlidersHorizontal, Sparkles, X } from "lucide-react"
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { AssetImage } from "@/components/ui/asset-image"
-import { fetchHeroes, type HeroClass, type HeroSummary } from "@/lib/api/heroes"
+import {
+  BOOST_SUGGESTIONS,
+  BOOSTS_MAX_LENGTH,
+  fetchHeroes,
+  sanitizeBoostsInput,
+  type HeroClass,
+  type HeroSummary,
+} from "@/lib/api/heroes"
 import { RARITIES_VISIBLE, RARITY_BG, RARITY_BORDER, RARITY_DECO, RARITY_GRADIENT, RARITY_TEXT } from "@/lib/constants"
 import { formatInt } from "@/lib/format"
 import type { Locale } from "@/lib/i18n"
@@ -16,15 +24,50 @@ interface HeroesViewProps {
 }
 
 export function HeroesView({ locale }: HeroesViewProps) {
-  const [heroClass, setHeroClass] = useState<HeroClass | "">("")
-  const [rarity, setRarity] = useState("")
-  const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // Init depuis l'URL : permet aux deep links (?boosts=minigun&heroClass=soldier)
+  // depuis la search globale ou un partage externe de pre-remplir les filtres.
+  const [heroClass, setHeroClass] = useState<HeroClass | "">(() => {
+    const c = searchParams.get("heroClass")
+    return c && HERO_CLASSES.includes(c as HeroClass) ? (c as HeroClass) : ""
+  })
+  const [rarity, setRarity] = useState(() => searchParams.get("rarity") ?? "")
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "")
+  const [boosts, setBoosts] = useState(() => sanitizeBoostsInput(searchParams.get("boosts") ?? ""))
+  const [debouncedSearch, setDebouncedSearch] = useState(search)
+  const [debouncedBoosts, setDebouncedBoosts] = useState(boosts)
   const [page, setPage] = useState(1)
   const [heroes, setHeroes] = useState<HeroSummary[]>([])
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
+
+  // Sync URL <- state : utilise replace pour ne pas polluer l'historique back/forward
+  // a chaque keystroke. Les debounced values sont utilisees pour search/boosts.
+  const syncUrl = useCallback(
+    (next: { search?: string; boosts?: string; heroClass?: string; rarity?: string }) => {
+      const params = new URLSearchParams()
+      if (next.search) params.set("search", next.search)
+      if (next.boosts) params.set("boosts", next.boosts)
+      if (next.heroClass) params.set("heroClass", next.heroClass)
+      if (next.rarity) params.set("rarity", next.rarity)
+      const qs = params.toString()
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    },
+    [router, pathname],
+  )
+
+  useEffect(() => {
+    syncUrl({
+      search: debouncedSearch,
+      boosts: debouncedBoosts,
+      heroClass: heroClass || undefined,
+      rarity: rarity || undefined,
+    })
+  }, [debouncedSearch, debouncedBoosts, heroClass, rarity, syncUrl])
 
   // Debounce search
   useEffect(() => {
@@ -32,10 +75,16 @@ export function HeroesView({ locale }: HeroesViewProps) {
     return () => clearTimeout(t)
   }, [search])
 
+  // Debounce boosts (separe pour pas refetch sur chaque keystroke)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedBoosts(boosts), 300)
+    return () => clearTimeout(t)
+  }, [boosts])
+
   // Reset page quand un filtre change
   useEffect(() => {
     setPage(1)
-  }, [heroClass, rarity, debouncedSearch])
+  }, [heroClass, rarity, debouncedSearch, debouncedBoosts])
 
   // Fetch
   useEffect(() => {
@@ -43,6 +92,7 @@ export function HeroesView({ locale }: HeroesViewProps) {
     setLoading(true)
     fetchHeroes({
       search: debouncedSearch || undefined,
+      boosts: debouncedBoosts || undefined,
       heroClass: heroClass || undefined,
       rarity: rarity || undefined,
       page,
@@ -66,13 +116,17 @@ export function HeroesView({ locale }: HeroesViewProps) {
     return () => {
       cancelled = true
     }
-  }, [debouncedSearch, heroClass, rarity, page])
+  }, [debouncedSearch, debouncedBoosts, heroClass, rarity, page])
 
-  const activeFilters = useMemo(() => [heroClass, rarity, search].filter(Boolean).length, [heroClass, rarity, search])
+  const activeFilters = useMemo(
+    () => [heroClass, rarity, search, boosts].filter(Boolean).length,
+    [heroClass, rarity, search, boosts],
+  )
   const hasFilter = activeFilters > 0
 
   function resetAll() {
     setSearch("")
+    setBoosts("")
     setHeroClass("")
     setRarity("")
   }
@@ -122,6 +176,52 @@ export function HeroesView({ locale }: HeroesViewProps) {
                   <X className="size-3.5" />
                 </button>
               )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <div className="relative">
+                <Sparkles className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={boosts}
+                  onChange={(e) => setBoosts(sanitizeBoostsInput(e.target.value))}
+                  maxLength={BOOSTS_MAX_LENGTH}
+                  placeholder="Boosts (e.g. minigun)..."
+                  className="w-full border border-border/50 bg-background/60 px-9 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none transition-colors"
+                />
+                {boosts && (
+                  <button
+                    type="button"
+                    onClick={() => setBoosts("")}
+                    aria-label="Clear boosts filter"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+              <p className="px-1 text-[10px] leading-snug text-muted-foreground/70">
+                Find heroes whose perks boost a specific weapon, stat or ability.
+              </p>
+              <div className="flex flex-wrap gap-1 px-1 pt-1">
+                {BOOST_SUGGESTIONS.map((term) => {
+                  const active = boosts === term
+                  return (
+                    <button
+                      key={term}
+                      type="button"
+                      onClick={() => setBoosts(active ? "" : term)}
+                      className={`cursor-pointer border px-2 py-0.5 text-[10px] font-medium capitalize transition-colors ${
+                        active
+                          ? "border-primary/60 bg-primary/10 text-foreground"
+                          : "border-border/50 bg-card/40 text-muted-foreground hover:border-border hover:text-foreground"
+                      }`}
+                    >
+                      {term}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             <FilterGroup label="Class">
