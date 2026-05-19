@@ -10,7 +10,7 @@ import type { Locale } from "@/lib/i18n";
 import type en from "@/lang/en.json";
 import { Arrow } from "@/components/svg/Arrow";
 import { weaponIcon } from "@/lib/cdn";
-import { TRAP_PLACEMENTS, TRAP_TARGETS, RARITIES_VISIBLE, ELEMENTS, RARITY_TEXT, RARITY_BG } from "@/lib/constants";
+import { TRAP_PLACEMENTS, RARITIES_VISIBLE, ELEMENTS, RARITY_TEXT, RARITY_BG } from "@/lib/constants";
 import { formatInt } from "@/lib/format";
 import { SkeletonWeaponGrid } from "@/components/ui/skeleton";
 import { AssetImage } from "@/components/ui/asset-image";
@@ -41,7 +41,6 @@ const RARITY_GRADIENT: Record<string, string> = {
 export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
   const [search, setSearch] = useState("");
   const [placement, setPlacement] = useState("");
-  const [target, setTarget] = useState("");
   const [rarity, setRarity] = useState("");
   const [element, setElement] = useState("");
   const [page, setPage] = useState(1);
@@ -54,7 +53,6 @@ export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
       const params = {
         search: search || undefined,
         placement: placement || undefined,
-        target: target || undefined,
         rarity: rarity || undefined,
         element: element || undefined,
         page,
@@ -67,11 +65,11 @@ export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
     } finally {
       setLoading(false);
     }
-  }, [search, placement, target, rarity, element, page]);
+  }, [search, placement, rarity, element, page]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, placement, target, rarity, element]);
+  }, [search, placement, rarity, element]);
 
   useEffect(() => {
     const t = setTimeout(doSearch, 300);
@@ -79,15 +77,14 @@ export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
   }, [doSearch]);
 
   const activeFilters = useMemo(
-    () => [placement, target, rarity, element, search].filter(Boolean).length,
-    [placement, target, rarity, element, search]
+    () => [placement, rarity, element, search].filter(Boolean).length,
+    [placement, rarity, element, search]
   );
   const hasFilters = activeFilters > 0;
 
   function resetAll() {
     setSearch("");
     setPlacement("");
-    setTarget("");
     setRarity("");
     setElement("");
   }
@@ -147,13 +144,6 @@ export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
               <FilterChip label={dict.search.all} active={!placement} onClick={() => setPlacement("")} />
               {TRAP_PLACEMENTS.map((p) => (
                 <FilterChip key={p} label={p} active={placement === p} onClick={() => setPlacement(p)} />
-              ))}
-            </FilterGroup>
-
-            <FilterGroup label={dict.search.target}>
-              <FilterChip label={dict.search.all} active={!target} onClick={() => setTarget("")} />
-              {TRAP_TARGETS.map((t) => (
-                <FilterChip key={t} label={t} active={target === t} onClick={() => setTarget(t)} />
               ))}
             </FilterGroup>
 
