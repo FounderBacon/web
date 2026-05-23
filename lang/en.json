@@ -183,7 +183,6 @@
     "typeMelee": "Melee",
     "category": "Category",
     "rarity": "Rarity",
-    "element": "Element",
     "all": "All",
     "noResults": "No weapons found.",
     "noResultsHint": "Try adjusting your filters.",
@@ -207,7 +206,7 @@
   },
   "privacy": {
     "title": "PRIVACY POLICY",
-    "lastUpdated": "Last updated: April 4, 2026"
+    "lastUpdated": "Last updated: May 23, 2026"
   },
   "dashboard": {
     "title": "Dashboard"

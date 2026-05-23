@@ -82,7 +82,8 @@ export function LoadoutSlot({ slot, label, kind, onChange }: LoadoutSlotProps) {
           type="button"
           onClick={() => onChange(null)}
           aria-label="Remove"
-          className="absolute right-1 top-1 flex size-6 items-center justify-center text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+          // Toujours visible sur mobile (pas de hover), reveal-on-hover desktop pour rester subtle
+          className="absolute right-1 top-1 flex size-6 items-center justify-center text-muted-foreground opacity-100 transition-opacity hover:text-foreground md:opacity-0 md:group-hover:opacity-100"
         >
           <X className="size-3.5" />
         </button>

@@ -311,7 +311,9 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="grid w-full max-w-2xl gap-0 overflow-hidden bg-king-900 p-0 sm:max-w-2xl"
+        // max-w-[calc(100%-2rem)] sur mobile garde 1rem de marge a gauche/droite
+        // sinon la popup colle aux bords ; max-w-2xl prend le relais a partir de sm
+        className="grid w-full max-w-[calc(100%-2rem)] gap-0 overflow-hidden bg-king-900 p-0 sm:max-w-2xl"
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">Search</DialogTitle>
@@ -415,20 +417,31 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
           )}
         </ul>
 
-        {/* Footer hints */}
+        {/* Footer hints : keyboard sur desktop, hint tactile + Close sur mobile */}
         <div className="flex items-center gap-4 border-t border-border bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
+          {/* Desktop : raccourcis clavier */}
+          <span className="hidden items-center gap-1.5 md:flex">
             <kbd className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium">↵</kbd>
             select
           </span>
-          <span className="flex items-center gap-1.5">
+          <span className="hidden items-center gap-1.5 md:flex">
             <kbd className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium">↑↓</kbd>
             navigate
           </span>
-          <span className="ml-auto flex items-center gap-1.5">
+          <span className="ml-auto hidden items-center gap-1.5 md:flex">
             <kbd className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium">esc</kbd>
             close
           </span>
+
+          {/* Mobile : hint tactile + bouton Close */}
+          <span className="flex items-center gap-1.5 md:hidden">Tap a result to open</span>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="ml-auto rounded border border-border bg-background px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-foreground transition-colors hover:border-primary md:hidden"
+          >
+            Close
+          </button>
         </div>
       </DialogContent>
     </Dialog>

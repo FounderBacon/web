@@ -1,73 +1,115 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
 import { Search as SearchIcon, SlidersHorizontal, X, RotateCcw } from "lucide-react";
-import { fetchRangedWeapons, fetchMeleeWeapons } from "@/lib/api/weapons";
-import type { WeaponSummary, MeleeWeaponSummary, PaginatedResponse } from "@/lib/types/weapon";
+import {
+  fetchRangedWeapons,
+  fetchMeleeWeapons,
+  fetchRangedWeaponsGrouped,
+  fetchMeleeWeaponsGrouped,
+} from "@/lib/api/weapons";
+import type { PaginatedResponse } from "@/lib/types/weapon";
+import type {
+  RangedWeaponGroupedSummary,
+  MeleeWeaponGroupedSummary,
+} from "@/lib/types/grouped";
 import type { Locale } from "@/lib/i18n";
 import type en from "@/lang/en.json";
 import { Arrow } from "@/components/svg/Arrow";
 import { weaponIcon } from "@/lib/cdn";
-import { RANGED_CATEGORIES, MELEE_CATEGORIES, RARITIES_VISIBLE, ELEMENTS, RARITY_TEXT, RARITY_BG } from "@/lib/constants";
+import { RANGED_CATEGORIES, MELEE_CATEGORIES, RARITIES_VISIBLE, RARITY_TEXT, RARITY_BG } from "@/lib/constants";
 import { formatInt } from "@/lib/format";
 import { SkeletonWeaponGrid } from "@/components/ui/skeleton";
-import { AssetImage } from "@/components/ui/asset-image";
+import { FanCard, type FanVariant } from "@/components/public/FanCard";
 
 type WeaponType = "ranged" | "melee";
-type AnyWeapon = WeaponSummary | MeleeWeaponSummary;
+type AnyWeaponGrouped = RangedWeaponGroupedSummary | MeleeWeaponGroupedSummary;
 
 interface SearchViewProps {
   dict: typeof en;
   locale: Locale;
 }
 
-// Bordures par rarete (accent gauche)
-const RARITY_BORDER: Record<string, string> = {
-  common: "border-l-common",
-  uncommon: "border-l-uncommon",
-  rare: "border-l-rare",
-  epic: "border-l-epic",
-  legendary: "border-l-legendary",
-  mythic: "border-l-mythic",
-};
-
-// Degrades subtils par rarete (fond carte)
-const RARITY_GRADIENT: Record<string, string> = {
-  common: "from-common/5",
-  uncommon: "from-uncommon/5",
-  rare: "from-rare/10",
-  epic: "from-epic/10",
-  legendary: "from-legendary/10",
-  mythic: "from-mythic/15",
-};
-
 export function SearchView({ dict, locale }: SearchViewProps) {
   const [type, setType] = useState<WeaponType>("ranged");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [rarity, setRarity] = useState("");
-  const [element, setElement] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<PaginatedResponse<AnyWeapon> | null>(null);
+  const [result, setResult] = useState<PaginatedResponse<AnyWeaponGrouped> | null>(null);
 
   const doSearch = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { search: search || undefined, category: category || undefined, rarity: rarity || undefined, element: element || undefined, page, limit: 24 };
-      const res = type === "ranged" ? await fetchRangedWeapons(params) : await fetchMeleeWeapons(params);
-      setResult(res as PaginatedResponse<AnyWeapon>);
+      const baseParams = {
+        search: search || undefined,
+        category: category || undefined,
+        page,
+        limit: 24,
+      };
+      const subdir = type === "ranged" ? "weapons-ranged" : "weapons-melee";
+      let res: PaginatedResponse<AnyWeaponGrouped>;
+      if (rarity) {
+        // Filtre rarete actif : on bypass le grouping et on adapte
+        const ungrouped =
+          type === "ranged"
+            ? await fetchRangedWeapons({ ...baseParams, rarity })
+            : await fetchMeleeWeapons({ ...baseParams, rarity });
+        res = {
+          ...ungrouped,
+          data: ungrouped.data.map((w) => {
+            const variant = {
+              slug: w.slug,
+              rarity: w.rarity,
+              icon: w.icon,
+              iconUrl: weaponIcon(w.icon, subdir),
+              iconUrlLarge: weaponIcon(w.icon, subdir),
+              isFounders: w.isFounders,
+            };
+            if (type === "ranged") {
+              const r = w as import("@/lib/types/weapon").WeaponSummary;
+              return {
+                name: r.name,
+                baseSlug: r.slug,
+                maxRarity: r.rarity,
+                variants: [variant],
+                category: r.category,
+                element: r.element,
+                ammoType: r.ammoType ?? "light",
+                weaponSet: r.weaponSet,
+              } satisfies RangedWeaponGroupedSummary;
+            }
+            const m = w as import("@/lib/types/weapon").MeleeWeaponSummary;
+            return {
+              name: m.name,
+              baseSlug: m.slug,
+              maxRarity: m.rarity,
+              variants: [variant],
+              category: m.category,
+              meleeClass: m.meleeClass,
+              element: m.element,
+              weaponSet: m.weaponSet,
+            } satisfies MeleeWeaponGroupedSummary;
+          }),
+        };
+      } else {
+        res =
+          type === "ranged"
+            ? await fetchRangedWeaponsGrouped(baseParams)
+            : await fetchMeleeWeaponsGrouped(baseParams);
+      }
+      setResult(res);
     } catch {
       setResult(null);
     } finally {
       setLoading(false);
     }
-  }, [type, search, category, rarity, element, page]);
+  }, [type, search, category, rarity, page]);
 
   useEffect(() => {
     setPage(1);
-  }, [type, search, category, rarity, element]);
+  }, [type, search, category, rarity]);
 
   useEffect(() => {
     const t = setTimeout(doSearch, 300);
@@ -75,14 +117,13 @@ export function SearchView({ dict, locale }: SearchViewProps) {
   }, [doSearch]);
 
   const categories = type === "ranged" ? RANGED_CATEGORIES : MELEE_CATEGORIES;
-  const activeFilters = useMemo(() => [category, rarity, element, search].filter(Boolean).length, [category, rarity, element, search]);
+  const activeFilters = useMemo(() => [category, rarity, search].filter(Boolean).length, [category, rarity, search]);
   const hasFilters = activeFilters > 0;
 
   function resetAll() {
     setSearch("");
     setCategory("");
     setRarity("");
-    setElement("");
   }
 
   const total = result?.pagination.total ?? 0;
@@ -162,12 +203,6 @@ export function SearchView({ dict, locale }: SearchViewProps) {
               ))}
             </FilterGroup>
 
-            <FilterGroup label={dict.search.element}>
-              <FilterChip label={dict.search.all} active={!element} onClick={() => setElement("")} />
-              {ELEMENTS.map((e) => (
-                <FilterChip key={e} label={e} active={element === e} onClick={() => setElement(e)} />
-              ))}
-            </FilterGroup>
           </div>
         </div>
       </aside>
@@ -200,10 +235,35 @@ export function SearchView({ dict, locale }: SearchViewProps) {
           <EmptyState dict={dict} onReset={resetAll} hasFilters={hasFilters} />
         ) : result && result.data.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-              {result.data.map((weapon) => (
-                <WeaponCard key={weapon.slug} weapon={weapon} locale={locale} type={type} />
-              ))}
+            <div className="grid grid-cols-2 gap-3 overflow-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {result.data.map((weapon) => {
+                const mainVariant = weapon.variants.find((v) => v.rarity === weapon.maxRarity) ?? weapon.variants[weapon.variants.length - 1];
+                const fanVariants: FanVariant[] = weapon.variants.map((v) => ({
+                  rarity: v.rarity,
+                  href: `/${locale}/weapons/${type}/${v.slug}`,
+                  iconUrl: v.iconUrl,
+                }));
+                return (
+                  <FanCard
+                    key={weapon.baseSlug}
+                    name={weapon.name}
+                    maxRarity={weapon.maxRarity}
+                    mainIconUrl={mainVariant.iconUrl}
+                    variants={fanVariants}
+                    subtitle={
+                      <>
+                        <span className="truncate">{weapon.category}</span>
+                        {weapon.element && weapon.element !== "physical" && (
+                          <>
+                            <span className="text-border">·</span>
+                            <span className="truncate capitalize">{weapon.element}</span>
+                          </>
+                        )}
+                      </>
+                    }
+                  />
+                );
+              })}
             </div>
 
             {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
@@ -254,47 +314,6 @@ function FilterChip({ label, active, onClick, dotClass, activeTextClass }: { lab
       {dotClass && <span className={`size-1.5 rounded-full ${dotClass}`} />}
       {label}
     </button>
-  );
-}
-
-// ── Weapon card flat (sans cadre PNG) ──────────────────────
-function WeaponCard({ weapon, locale, type }: { weapon: AnyWeapon; locale: Locale; type: WeaponType }) {
-  const rarity = weapon.rarity;
-  const borderColor = RARITY_BORDER[rarity] ?? "border-l-border";
-  const gradient = RARITY_GRADIENT[rarity] ?? "from-transparent";
-  const rarityTextColor = RARITY_TEXT[rarity] ?? "text-muted-foreground";
-  const rarityBgColor = RARITY_BG[rarity] ?? "bg-muted";
-
-  return (
-    <Link
-      href={`/${locale}/weapons/${type}/${weapon.slug}`}
-      className={`group relative flex flex-col overflow-hidden border border-border/50 border-l-2 ${borderColor} bg-card/40 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-card hover:shadow-lg`}
-    >
-      <div className={`relative flex aspect-square items-center justify-center overflow-hidden bg-linear-to-br ${gradient} to-transparent`}>
-        <span className={`absolute right-2 top-2 size-2 rounded-full ${rarityBgColor} shadow-sm`} />
-        <AssetImage
-          src={weaponIcon(weapon.icon, type === "ranged" ? "weapons-ranged" : "weapons-melee")}
-          alt={weapon.name}
-          className="size-4/5 object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-110"
-          loading="lazy"
-        />
-      </div>
-
-      <div className="flex flex-col gap-0.5 border-t border-border/50 bg-card px-3 py-2.5">
-        <p className="truncate font-sans text-sm font-semibold leading-tight text-foreground">{weapon.name}</p>
-        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-          <span className={`font-semibold ${rarityTextColor}`}>{rarity}</span>
-          <span className="text-border">·</span>
-          <span className="truncate">{weapon.category}</span>
-          {weapon.element && weapon.element !== "physical" && (
-            <>
-              <span className="text-border">·</span>
-              <span className="truncate capitalize">{weapon.element}</span>
-            </>
-          )}
-        </p>
-      </div>
-    </Link>
   );
 }
 

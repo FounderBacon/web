@@ -1,6 +1,7 @@
 import { api } from "./client"
 import type { PaginatedResponse, TrapSummary, TrapDetail, TrapQueryParams, TrapPlacement } from "@/lib/types/trap"
 import type { AppliedBonuses } from "@/lib/types/calculate"
+import type { TrapGroupedSummary } from "@/lib/types/grouped"
 
 function toQueryString(params: Record<string, string | number | boolean | undefined>): string {
   const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== "")
@@ -15,6 +16,11 @@ export async function fetchTraps(params: TrapQueryParams = {}): Promise<Paginate
 
 export async function fetchTrapsByPlacement(placement: TrapPlacement, params: Omit<TrapQueryParams, "placement"> = {}): Promise<PaginatedResponse<TrapSummary>> {
   return api.get<PaginatedResponse<TrapSummary>>(`/v1/traps/${placement}${toQueryString({ ...params })}`, { skipAuth: true })
+}
+
+// Variante groupee par nom (anti-duplication des rarites cote search).
+export async function fetchTrapsGrouped(params: TrapQueryParams = {}): Promise<PaginatedResponse<TrapGroupedSummary>> {
+  return api.get<PaginatedResponse<TrapGroupedSummary>>(`/v1/traps${toQueryString({ ...params, groupByName: true })}`, { skipAuth: true })
 }
 
 // ── Detail ────────────────────────────────────────────────

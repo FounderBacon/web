@@ -1,21 +1,21 @@
 "use client"
 
 import { RotateCcw, Search as SearchIcon, SlidersHorizontal, Sparkles, X } from "lucide-react"
-import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { AssetImage } from "@/components/ui/asset-image"
+import { FanCard, type FanVariant } from "@/components/public/FanCard"
 import {
   BOOST_SUGGESTIONS,
   BOOSTS_MAX_LENGTH,
   fetchHeroes,
+  fetchHeroesGrouped,
   sanitizeBoostsInput,
   type HeroClass,
-  type HeroSummary,
 } from "@/lib/api/heroes"
-import { RARITIES_VISIBLE, RARITY_BG, RARITY_BORDER, RARITY_DECO, RARITY_GRADIENT, RARITY_TEXT } from "@/lib/constants"
+import { RARITIES_VISIBLE, RARITY_BG, RARITY_DECO } from "@/lib/constants"
 import { formatInt } from "@/lib/format"
 import type { Locale } from "@/lib/i18n"
+import type { HeroGroupedSummary } from "@/lib/types/grouped"
 
 const HERO_CLASSES: HeroClass[] = ["soldier", "constructor", "ninja", "outlander"]
 
@@ -40,7 +40,9 @@ export function HeroesView({ locale }: HeroesViewProps) {
   const [debouncedSearch, setDebouncedSearch] = useState(search)
   const [debouncedBoosts, setDebouncedBoosts] = useState(boosts)
   const [page, setPage] = useState(1)
-  const [heroes, setHeroes] = useState<HeroSummary[]>([])
+  // On stocke toujours en format groupe ; quand un filtre rarete est actif,
+  // on convertit chaque HeroSummary en groupe a 1 variante pour uniformiser le rendu.
+  const [heroes, setHeroes] = useState<HeroGroupedSummary[]>([])
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -86,18 +88,41 @@ export function HeroesView({ locale }: HeroesViewProps) {
     setPage(1)
   }, [heroClass, rarity, debouncedSearch, debouncedBoosts])
 
-  // Fetch
+  // Fetch : groupe par defaut, ungrouped (et adapte au format groupe) si filtre rarete actif
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    fetchHeroes({
+    const baseParams = {
       search: debouncedSearch || undefined,
       boosts: debouncedBoosts || undefined,
       heroClass: heroClass || undefined,
-      rarity: rarity || undefined,
       page,
       limit: 24,
-    })
+    }
+    const promise = rarity
+      ? fetchHeroes({ ...baseParams, rarity }).then((res) => ({
+          ...res,
+          data: res.data.map(
+            (h): HeroGroupedSummary => ({
+              name: h.name,
+              baseSlug: h.slug,
+              maxRarity: h.rarity,
+              heroClass: h.heroClass,
+              subclass: h.subclass,
+              variants: [
+                {
+                  slug: h.slug,
+                  rarity: h.rarity,
+                  icon: h.icon,
+                  iconUrl: h.iconUrl,
+                  iconUrlLarge: h.iconUrlLarge,
+                },
+              ],
+            }),
+          ),
+        }))
+      : fetchHeroesGrouped(baseParams)
+    promise
       .then((res) => {
         if (cancelled) return
         setHeroes(res.data)
@@ -275,31 +300,23 @@ export function HeroesView({ locale }: HeroesViewProps) {
         ) : heroes.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted-foreground">No heroes match your filters.</p>
         ) : (
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <ul className="grid grid-cols-2 gap-3 overflow-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {heroes.map((h) => {
-              const borderColor = RARITY_BORDER[h.rarity] ?? "border-l-border"
-              const gradient = RARITY_GRADIENT[h.rarity] ?? "from-transparent"
-              const rarityTextColor = RARITY_TEXT[h.rarity] ?? "text-muted-foreground"
-              const rarityBgColor = RARITY_BG[h.rarity] ?? "bg-muted"
+              const mainVariant = h.variants.find((v) => v.rarity === h.maxRarity) ?? h.variants[h.variants.length - 1]
+              const fanVariants: FanVariant[] = h.variants.map((v) => ({
+                rarity: v.rarity,
+                href: `/${locale}/heroes/${v.slug}`,
+                iconUrl: v.iconUrl,
+              }))
               return (
-                <li key={h._id}>
-                  <Link
-                    href={`/${locale}/heroes/${h.slug}`}
-                    className={`group relative flex h-full flex-col overflow-hidden border border-border/50 border-l-2 ${borderColor} bg-card/40 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-card hover:shadow-lg`}
-                  >
-                    <div className={`relative flex aspect-square items-center justify-center overflow-hidden bg-linear-to-br ${gradient} to-transparent`}>
-                      <span className={`absolute right-2 top-2 size-2 rounded-full ${rarityBgColor} shadow-sm`} />
-                      <AssetImage
-                        src={h.iconUrl}
-                        alt={h.name}
-                        className="absolute inset-0 size-full object-contain p-2 drop-shadow-md transition-transform duration-300 group-hover:scale-110"
-                      />
-                    </div>
-                    <div className="flex flex-1 flex-col gap-0.5 border-t border-border/50 bg-card px-3 py-2.5">
-                      <p className="truncate text-sm font-semibold leading-tight text-foreground">{h.name}</p>
-                      <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                        <span className={`font-semibold ${rarityTextColor}`}>{h.rarity}</span>
-                        <span className="text-border">·</span>
+                <li key={h.baseSlug} className="overflow-visible">
+                  <FanCard
+                    name={h.name}
+                    maxRarity={h.maxRarity}
+                    mainIconUrl={mainVariant.iconUrl}
+                    variants={fanVariants}
+                    subtitle={
+                      <>
                         <span className="truncate">{h.heroClass}</span>
                         {h.subclass && (
                           <>
@@ -307,9 +324,9 @@ export function HeroesView({ locale }: HeroesViewProps) {
                             <span className="truncate">{h.subclass}</span>
                           </>
                         )}
-                      </p>
-                    </div>
-                  </Link>
+                      </>
+                    }
+                  />
                 </li>
               )
             })}

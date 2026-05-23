@@ -13,7 +13,7 @@ import { FbcnLogo } from "@/components/svg/FbcnLogo"
 import { ScreenshotQrCard } from "@/components/share/screenshot/ScreenshotQrCard"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Camera, Download, XIcon } from "lucide-react"
+import { Camera, Download, RotateCw, XIcon } from "lucide-react"
 import { domToJpeg } from "modern-screenshot"
 
 interface ScreenshotDialogProps {
@@ -223,27 +223,38 @@ export function ScreenshotDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="w-fit max-w-[95vw] gap-0 overflow-hidden bg-king-900 p-5 sm:max-w-[95vw]">
+      <DialogContent showCloseButton={false} className="w-fit max-w-[calc(100%-1rem)] gap-0 overflow-hidden bg-king-900 p-3 sm:max-w-[95vw] sm:p-5">
         {/* Header dialog : icone + titre + sous-titre, boutons a droite */}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg" style={{ border: "1px solid #4A2376", background: "rgba(49, 23, 79, 0.4)" }}>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg" style={{ border: "1px solid #4A2376", background: "rgba(49, 23, 79, 0.4)" }}>
               <Camera className="size-4 text-primary" />
             </div>
-            <div className="flex flex-col">
-              <DialogTitle className="text-base font-semibold leading-tight">Screenshot Preview</DialogTitle>
-              <p className="text-[11px] uppercase tracking-widest" style={{ color: "#9562D0" }}>Ready to share</p>
+            <div className="flex min-w-0 flex-col">
+              <DialogTitle className="truncate text-base font-semibold leading-tight">Screenshot Preview</DialogTitle>
+              <p className="hidden text-[11px] uppercase tracking-widest sm:block" style={{ color: "#9562D0" }}>Ready to share</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Button size="sm" onClick={handleDownload} disabled={downloading || !assetsReady}>
               <Download className="size-3.5" />
-              {!assetsReady ? "Loading..." : downloading ? "Exporting..." : "Download PNG"}
+              <span className="hidden sm:inline">
+                {!assetsReady ? "Loading..." : downloading ? "Exporting..." : "Download PNG"}
+              </span>
             </Button>
             <Button size="icon-sm" variant="ghost" onClick={() => onOpenChange(false)}>
               <XIcon className="size-4" />
             </Button>
           </div>
+        </div>
+
+        {/* Hint mobile portrait : le template 1920x1080 est minuscule en portrait,
+            invite l'utilisateur a tourner son tel pour mieux voir */}
+        <div
+          className="mb-3 hidden items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-foreground portrait:max-md:flex"
+        >
+          <RotateCw className="size-3.5 shrink-0 text-primary" />
+          <span>Rotate your phone to landscape for a bigger preview.</span>
         </div>
 
         {/* Cadre preview : dimensions calculees pour rester dans le viewport (largeur + hauteur) */}

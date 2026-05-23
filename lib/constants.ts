@@ -81,9 +81,6 @@ export const MELEE_CATEGORIES = ["sword", "hardware", "spear", "scythe", "axe", 
 // ── Traps ───────────────────────────────────────────────────────
 export const TRAP_PLACEMENTS = ["floor", "wall", "ceiling"] as const
 
-// ── Elements ────────────────────────────────────────────────────
-export const ELEMENTS = ["physical", "energy", "fire", "water", "nature"] as const
-
 // ── Stats ───────────────────────────────────────────────────────
 export const MAIN_STATS = ["damage", "dps", "critChance", "critMultiplier", "firingRate", "clipSize", "reloadTime", "durability", "totalShots", "totalHits", "attackSpeed"] as const
 

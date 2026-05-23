@@ -1,4 +1,5 @@
-import type { Rarity } from "@/lib/types/shared"
+import type { Rarity, PaginatedResponse } from "@/lib/types/shared"
+import type { HeroGroupedSummary } from "@/lib/types/grouped"
 import { api } from "./client"
 
 export type HeroClass = "soldier" | "constructor" | "ninja" | "outlander"
@@ -125,6 +126,17 @@ export async function fetchHeroesByClass(
   params: Omit<HeroQueryParams, "heroClass"> = {},
 ): Promise<PaginatedHeroes> {
   return api.get<PaginatedHeroes>(`/v1/heroes/${heroClass}${toQueryString({ ...params })}`, { skipAuth: true })
+}
+
+// Variante groupee par nom (anti-duplication des rarites cote search).
+// Le back trie les variants ASC par rarete et fournit maxRarity au niveau groupe.
+export async function fetchHeroesGrouped(
+  params: HeroQueryParams = {},
+): Promise<PaginatedResponse<HeroGroupedSummary>> {
+  return api.get<PaginatedResponse<HeroGroupedSummary>>(
+    `/v1/heroes${toQueryString({ ...params, groupByName: true })}`,
+    { skipAuth: true },
+  )
 }
 
 export async function fetchHero(slug: string): Promise<HeroDetail> {

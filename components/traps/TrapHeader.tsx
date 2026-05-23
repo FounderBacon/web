@@ -1,20 +1,28 @@
 "use client"
 
+import { useState } from "react"
 import type { TrapDetail } from "@/lib/types/trap"
 import { weaponIcon } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
+import { QrShareDialog } from "@/components/share/QrShareDialog"
 import { Button } from "@/components/ui/button"
 import { AssetImage } from "@/components/ui/asset-image"
-import { Share2, Check } from "lucide-react"
+import { Camera, Check, QrCode, Share2 } from "lucide-react"
 
 interface TrapHeaderProps {
   trap: TrapDetail
   onShare: () => void
   copied: boolean
+  onScreenshot: () => void
+  // Path complet pour le QR (ex: "/fr/traps/floor-launcher?t=2&p0=PID")
+  sharePath: string
+  // URL absolue pour affichage + copy (https://...)
+  shareUrl: string
 }
 
-export function TrapHeader({ trap, onShare, copied }: TrapHeaderProps) {
+export function TrapHeader({ trap, onShare, copied, onScreenshot, sharePath, shareUrl }: TrapHeaderProps) {
   const rarityColor = RARITY_TEXT[trap.rarity] ?? "text-muted-foreground"
+  const [qrOpen, setQrOpen] = useState(false)
 
   return (
     <div className="border-b border-border/50 bg-background px-4 py-3 sm:px-6">
@@ -44,8 +52,25 @@ export function TrapHeader({ trap, onShare, copied }: TrapHeaderProps) {
             {copied ? <Check className="size-3" /> : <Share2 className="size-3" />}
             <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
           </Button>
+          <Button size="xs" variant="outline" onClick={() => setQrOpen(true)}>
+            <QrCode className="size-3" />
+            <span className="hidden sm:inline">QR</span>
+          </Button>
+          <Button size="xs" variant="outline" onClick={onScreenshot}>
+            <Camera className="size-3" />
+            <span className="hidden sm:inline">Screenshot</span>
+          </Button>
         </div>
       </div>
+
+      <QrShareDialog
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        path={sharePath}
+        fullUrl={shareUrl}
+        title={trap.name}
+        description="Scan or download to share this build"
+      />
     </div>
   )
 }

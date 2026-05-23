@@ -37,6 +37,22 @@ export function QrShareDialog({
   const [downloading, setDownloading] = useState(false)
   const [copyingImage, setCopyingImage] = useState(false)
   const brandedRef = useRef<HTMLDivElement>(null)
+  // Container du preview branded : on mesure sa largeur pour scaler le template 600x800
+  // dynamiquement (sinon le 300x400 fixe deborde sur petits mobiles)
+  const brandedContainerRef = useRef<HTMLDivElement>(null)
+  const [brandedScale, setBrandedScale] = useState(0.5)
+
+  useEffect(() => {
+    if (!open || mode !== "branded") return
+    const el = brandedContainerRef.current
+    if (!el) return
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0].contentRect.width
+      if (width > 0) setBrandedScale(width / 600)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [open, mode])
 
   // Pre-charge le PNG raw une fois la dialog ouverte
   useEffect(() => {
@@ -131,7 +147,7 @@ export function QrShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md gap-4 bg-king-900 p-5">
+      <DialogContent className="w-full max-w-[calc(100%-2rem)] gap-4 bg-king-900 p-4 sm:max-w-md sm:p-5">
         <div className="flex flex-col gap-1">
           <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
           {description && <p className="text-xs text-muted-foreground">{description}</p>}
@@ -160,8 +176,13 @@ export function QrShareDialog({
               <img src={rawPngUrl} alt="QR code" className="size-full" />
             </div>
           ) : (
-            <div className="overflow-hidden" style={{ width: 300, height: 400 }}>
-              <div style={{ transform: "scale(0.5)", transformOrigin: "top left", width: 600, height: 800 }}>
+            // Container auto-scale : w-full max-w-[300px] avec aspect 3/4
+            // Le template 600x800 est scale via ResizeObserver pour matcher la largeur reelle
+            <div
+              ref={brandedContainerRef}
+              className="aspect-[3/4] w-full max-w-[300px] overflow-hidden"
+            >
+              <div style={{ transform: `scale(${brandedScale})`, transformOrigin: "top left", width: 600, height: 800 }}>
                 <BrandedTemplate ref={brandedRef} qrSrc={rawPngUrl} title={title} />
               </div>
             </div>
@@ -173,16 +194,18 @@ export function QrShareDialog({
           <p className="break-all rounded border border-border/50 bg-card/40 px-3 py-2 text-[11px] text-muted-foreground">
             {fullUrl}
           </p>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={handleCopy} className="flex-1">
+          {/* Boutons : grille 2 cols mobile (Copy URL + Copy image en row, Download full width dessous),
+              row plate a partir de sm. Mieux que 3 stack vertical (trop chargé) et meilleur tap target que 3 en row sur mobile */}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row">
+            <Button size="sm" variant="outline" onClick={handleCopy} className="sm:flex-1">
               {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               {copied ? "Copied" : "Copy URL"}
             </Button>
-            <Button size="sm" variant="outline" onClick={handleCopyImage} disabled={!rawPngUrl || copyingImage} className="flex-1">
+            <Button size="sm" variant="outline" onClick={handleCopyImage} disabled={!rawPngUrl || copyingImage} className="sm:flex-1">
               {copiedImage ? <Check className="size-3.5" /> : <ImageIcon className="size-3.5" />}
               {copiedImage ? "Copied" : copyingImage ? "..." : "Copy image"}
             </Button>
-            <Button size="sm" onClick={handleDownload} disabled={!rawPngUrl || downloading} className="flex-1">
+            <Button size="sm" onClick={handleDownload} disabled={!rawPngUrl || downloading} className="col-span-2 sm:col-span-1 sm:flex-1">
               <ImageDown className="size-3.5" />
               {downloading ? "..." : "Download"}
             </Button>

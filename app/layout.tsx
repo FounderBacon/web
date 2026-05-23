@@ -66,7 +66,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <link rel="preconnect" href="https://cdn.founderbacon.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.founderbacon.com" />
       </head>
-      <body className="m-0 p-0 overflow-x-hidden container bg-background text-foreground">
+      <body className="container m-0 overflow-x-clip bg-background p-0 text-foreground">
         <FeatureProvider initial={features}>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
             <RouteGuard>
