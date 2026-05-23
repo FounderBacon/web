@@ -12,6 +12,7 @@ import type { Perk } from "@/lib/types/weapon";
 import { SectionContainer } from "@/components/public/SectionContainer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TrapHeader } from "@/components/traps/TrapHeader";
+import { TrapScreenshotDialog } from "@/components/traps/TrapScreenshotDialog";
 import { TrapTierSelector } from "@/components/traps/TrapTierSelector";
 import { TrapStatsColumn } from "@/components/traps/TrapStatsColumn";
 import { TrapInfoColumn } from "@/components/traps/TrapInfoColumn";
@@ -28,10 +29,20 @@ export default function TrapPage() {
   const [tier, setTier] = useState(searchParams.get("t") ?? "1");
   const [selectedPerks, setSelectedPerks] = useState<Record<number, Perk | null>>({});
   const [previewPerk, setPreviewPerk] = useState<Perk | null>(null);
-  const [level, setLevel] = useState(0);
-  const [offensive, setOffensive] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [screenshotOpen, setScreenshotOpen] = useState(false);
   const initialParamsRef = useRef(Object.fromEntries(searchParams.entries()));
+  // Init level/offensive depuis l'URL si presents (sinon 0, ramene au min du tier au mount)
+  const [level, setLevel] = useState(() => {
+    const v = parseInt(initialParamsRef.current.l ?? "", 10);
+    return isNaN(v) ? 0 : v;
+  });
+  const [offensive, setOffensive] = useState(() => {
+    const v = parseInt(initialParamsRef.current.o ?? "", 10);
+    return isNaN(v) ? 0 : v;
+  });
+  // Si l'URL contient level, on bypass le reset auto au mount (sinon le tier change le ramene au min)
+  const levelFromUrlRef = useRef(!!initialParamsRef.current.l);
 
   // Stats calculees par le back
   const [baseStats, setBaseStats] = useState<TrapCalculatedStats | null>(null);
@@ -77,11 +88,19 @@ export default function TrapPage() {
     });
   }, [trap?.slug]);
 
-  // Reset level au min du tier quand le tier change
+  // Reset level au min du tier quand le tier change.
+  // Exception : au premier passage si level vient de l'URL, on le clamp dans le range courant.
   useEffect(() => {
     if (!trap) return;
     const td: TierData | undefined = trap.tiers[tier];
-    if (td?.levelRange?.min !== undefined) setLevel(td.levelRange.min);
+    if (!td?.levelRange) return;
+    const range = td.levelRange;
+    if (levelFromUrlRef.current) {
+      levelFromUrlRef.current = false;
+      setLevel((prev) => Math.max(range.min, Math.min(range.max, prev)));
+      return;
+    }
+    if (range.min !== undefined) setLevel(range.min);
   }, [trap, tier]);
 
   // Appel /calculate a chaque changement
@@ -144,27 +163,37 @@ export default function TrapPage() {
     };
   }, [trap, tier, level, offensive, selectedPerks, params.slug]);
 
-  // Sync URL
+  // Construction des query params (utilisee par sync URL + share + QR)
+  const writeUrlParams = useCallback((url: URL) => {
+    url.search = "";
+    url.searchParams.set("t", tier);
+    for (const [slot, perk] of Object.entries(selectedPerks)) {
+      if (perk) url.searchParams.set(`p${slot}`, perk.perkId);
+    }
+    if (level > 0) url.searchParams.set("l", String(level));
+    if (offensive > 0) url.searchParams.set("o", String(offensive));
+  }, [tier, selectedPerks, level, offensive]);
+
   useEffect(() => {
     if (!trap) return;
     const url = new URL(window.location.href);
-    url.search = "";
-    url.searchParams.set("t", tier);
-    for (const [slot, perk] of Object.entries(selectedPerks)) {
-      if (perk) url.searchParams.set(`p${slot}`, perk.perkId);
-    }
+    writeUrlParams(url);
     window.history.replaceState(null, "", url.pathname + url.search);
-  }, [tier, selectedPerks, trap]);
+  }, [trap, writeUrlParams]);
 
   const buildShareUrl = useCallback(() => {
     const url = new URL(window.location.href);
-    url.search = "";
-    url.searchParams.set("t", tier);
-    for (const [slot, perk] of Object.entries(selectedPerks)) {
-      if (perk) url.searchParams.set(`p${slot}`, perk.perkId);
-    }
+    writeUrlParams(url);
     return url.toString();
-  }, [tier, selectedPerks]);
+  }, [writeUrlParams]);
+
+  // Path absolu (avec query) pour l'API QR — synchro avec les memes params que share
+  const buildSharePath = useCallback(() => {
+    if (typeof window === "undefined") return "";
+    const url = new URL(window.location.href);
+    writeUrlParams(url);
+    return url.pathname + url.search;
+  }, [writeUrlParams]);
 
   async function handleShare() {
     const url = buildShareUrl();
@@ -217,7 +246,14 @@ export default function TrapPage() {
       <SectionContainer className="min-h-screen">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
-        <TrapHeader trap={trap} onShare={handleShare} copied={copied} />
+        <TrapHeader
+          trap={trap}
+          onShare={handleShare}
+          copied={copied}
+          onScreenshot={() => setScreenshotOpen(true)}
+          sharePath={buildSharePath()}
+          shareUrl={buildShareUrl()}
+        />
 
         {tierData && (
           <>
@@ -266,6 +302,20 @@ export default function TrapPage() {
               </Tabs>
             </div>
           </>
+        )}
+
+        {trap && tierData && (
+          <TrapScreenshotDialog
+            open={screenshotOpen}
+            onOpenChange={setScreenshotOpen}
+            trap={trap}
+            tierData={tierData}
+            selectedPerks={selectedPerks}
+            slots={trap.perkSlots.slice(0, -1)}
+            baseStats={baseStats}
+            modifiedStats={modifiedStats}
+            sharePath={buildSharePath()}
+          />
         )}
       </SectionContainer>
     </TooltipProvider>

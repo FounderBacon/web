@@ -145,7 +145,6 @@
     "weaponsTitle": "Weapons",
     "trapsTitle": "Traps",
     "placement": "Placement",
-    "target": "Target",
     "backToHub": "Back to search",
     "hubTitle": "Search",
     "hubSubtitle": "Browse the full Save the World database. Pick a category to start.",
@@ -184,7 +183,6 @@
     "typeMelee": "Melee",
     "category": "Category",
     "rarity": "Rarity",
-    "element": "Element",
     "all": "All",
     "noResults": "No weapons found.",
     "noResultsHint": "Try adjusting your filters.",
@@ -208,7 +206,7 @@
   },
   "privacy": {
     "title": "PRIVACY POLICY",
-    "lastUpdated": "Last updated: April 4, 2026"
+    "lastUpdated": "Last updated: May 23, 2026"
   },
   "dashboard": {
     "title": "Dashboard"

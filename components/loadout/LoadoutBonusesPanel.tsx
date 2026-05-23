@@ -55,7 +55,6 @@ export function LoadoutBonusesPanel({ commander, support, teamPerks, offensive }
             heroName={commander.heroName}
             heroRarity={commander.rarity}
             iconUrl={perkIcon(commander.perkName)}
-            perkName={commander.perkName}
             perkDescription={commander.perkDescription}
             primary
           />
@@ -74,7 +73,6 @@ export function LoadoutBonusesPanel({ commander, support, teamPerks, offensive }
                 heroName={s.heroName}
                 heroRarity={s.rarity}
                 iconUrl={perkIcon(s.perkName)}
-                perkName={s.perkName}
                 perkDescription={s.perkDescription}
               />
             ))}
@@ -92,7 +90,6 @@ export function LoadoutBonusesPanel({ commander, support, teamPerks, offensive }
                 key={p.perkId}
                 kind="Team"
                 iconUrl={teamPerkIcon(p.name)}
-                perkName={p.name}
                 perkDescription={p.description ?? p.requirements}
               />
             ))}
@@ -108,12 +105,11 @@ interface PerkRowProps {
   heroName?: string
   heroRarity?: string
   iconUrl: string
-  perkName: string
   perkDescription: string
   primary?: boolean
 }
 
-function PerkRow({ kind, heroName, heroRarity, iconUrl, perkName, perkDescription, primary }: PerkRowProps) {
+function PerkRow({ kind, heroName, heroRarity, iconUrl, perkDescription, primary }: PerkRowProps) {
   const rarityClass = heroRarity ? RARITY_TEXT[heroRarity] : undefined
   return (
     <div
@@ -123,8 +119,8 @@ function PerkRow({ kind, heroName, heroRarity, iconUrl, perkName, perkDescriptio
         <AssetImage src={iconUrl} alt="" className="absolute inset-0 size-full object-contain" />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-sm font-semibold text-foreground">{perkName}</p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold leading-snug text-foreground">{perkDescription}</p>
           <span className="shrink-0 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{kind}</span>
         </div>
         {heroName && (
@@ -138,7 +134,6 @@ function PerkRow({ kind, heroName, heroRarity, iconUrl, perkName, perkDescriptio
             )}
           </p>
         )}
-        <p className="text-xs leading-relaxed text-foreground/90">{perkDescription}</p>
       </div>
     </div>
   )

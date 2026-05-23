@@ -74,10 +74,7 @@ export function LoadoutSlot({ slot, label, kind, onChange }: LoadoutSlotProps) {
               </span>
             </TooltipTrigger>
             <TooltipContent side="left" className="max-w-xs">
-              <div className="flex flex-col gap-1">
-                <p className="font-semibold">{slot.perkName}</p>
-                <p className="text-[11px] leading-snug">{slot.perkDescription}</p>
-              </div>
+              <p className="text-[11px] font-semibold leading-snug">{slot.perkDescription}</p>
             </TooltipContent>
           </Tooltip>
         </button>
@@ -85,7 +82,8 @@ export function LoadoutSlot({ slot, label, kind, onChange }: LoadoutSlotProps) {
           type="button"
           onClick={() => onChange(null)}
           aria-label="Remove"
-          className="absolute right-1 top-1 flex size-6 items-center justify-center text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+          // Toujours visible sur mobile (pas de hover), reveal-on-hover desktop pour rester subtle
+          className="absolute right-1 top-1 flex size-6 items-center justify-center text-muted-foreground opacity-100 transition-opacity hover:text-foreground md:opacity-0 md:group-hover:opacity-100"
         >
           <X className="size-3.5" />
         </button>

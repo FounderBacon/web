@@ -1,6 +1,6 @@
 "use client"
 
-import { Camera, Download, XIcon } from "lucide-react"
+import { Camera, Download, RotateCw, XIcon } from "lucide-react"
 import { domToJpeg } from "modern-screenshot"
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { ScreenshotQrCard } from "@/components/share/screenshot/ScreenshotQrCard"
@@ -179,35 +179,46 @@ export function LoadoutScreenshotDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-fit max-w-[95vw] gap-0 overflow-hidden bg-king-900 p-5 sm:max-w-[95vw]"
+        className="w-fit max-w-[calc(100%-1rem)] gap-0 overflow-hidden bg-king-900 p-3 sm:max-w-[95vw] sm:p-5"
       >
         {/* Header */}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div
-              className="flex size-9 items-center justify-center rounded-lg"
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg"
               style={{ border: "1px solid #4A2376", background: "rgba(49, 23, 79, 0.4)" }}
             >
               <Camera className="size-4 text-primary" />
             </div>
-            <div className="flex flex-col">
-              <DialogTitle className="text-base font-semibold leading-tight">
+            <div className="flex min-w-0 flex-col">
+              <DialogTitle className="truncate text-base font-semibold leading-tight">
                 Screenshot Preview
               </DialogTitle>
-              <p className="text-[11px] uppercase tracking-widest" style={{ color: "#9562D0" }}>
+              <p className="hidden text-[11px] uppercase tracking-widest sm:block" style={{ color: "#9562D0" }}>
                 Ready to share
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Button size="sm" onClick={handleDownload} disabled={downloading || !assetsReady}>
               <Download className="size-3.5" />
-              {!assetsReady ? "Loading..." : downloading ? "Exporting..." : "Download JPG"}
+              <span className="hidden sm:inline">
+                {!assetsReady ? "Loading..." : downloading ? "Exporting..." : "Download JPG"}
+              </span>
             </Button>
             <Button size="icon-sm" variant="ghost" onClick={() => onOpenChange(false)}>
               <XIcon className="size-4" />
             </Button>
           </div>
+        </div>
+
+        {/* Hint mobile portrait : le template 1920x1080 est minuscule en portrait,
+            invite l'utilisateur a tourner son tel pour mieux voir */}
+        <div
+          className="mb-3 hidden items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-foreground portrait:max-md:flex"
+        >
+          <RotateCw className="size-3.5 shrink-0 text-primary" />
+          <span>Rotate your phone to landscape for a bigger preview.</span>
         </div>
 
         {/* Preview cadre : dimensions dynamiques (viewport-fit) via usePreviewScale */}
@@ -356,11 +367,6 @@ function LoadoutTemplateInner(
                   <p className="text-base uppercase tracking-wider" style={{ color: "#CAB0E8" }}>
                     {commander.heroName}
                   </p>
-                  <p
-                    className={`text-2xl font-bold uppercase leading-tight ${commanderRarityColor}`}
-                  >
-                    {commander.perkName}
-                  </p>
                 </div>
                 <div
                   className="flex items-start gap-3 rounded p-3"
@@ -371,7 +377,7 @@ function LoadoutTemplateInner(
                     alt=""
                     className="size-10 shrink-0 object-contain"
                   />
-                  <p className="text-sm leading-snug" style={{ color: "#CAB0E8" }}>
+                  <p className={`text-lg font-bold leading-snug ${commanderRarityColor}`}>
                     {commander.perkDescription}
                   </p>
                 </div>
@@ -428,13 +434,7 @@ function LoadoutTemplateInner(
                       <p className="truncate text-xs leading-tight" style={{ color: "#CAB0E8" }}>
                         {s.heroName} · <span className="capitalize">{s.rarity}</span>
                       </p>
-                      <p className="truncate text-base font-bold leading-tight text-white">
-                        {s.perkName}
-                      </p>
-                      <p
-                        className="line-clamp-2 text-xs leading-snug"
-                        style={{ color: "#CAB0E8" }}
-                      >
+                      <p className="line-clamp-2 text-sm font-bold leading-snug text-white">
                         {s.perkDescription}
                       </p>
                     </div>

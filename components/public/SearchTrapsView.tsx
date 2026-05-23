@@ -1,77 +1,77 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
 import { Search as SearchIcon, SlidersHorizontal, X, RotateCcw } from "lucide-react";
-import { fetchTraps } from "@/lib/api/traps";
-import type { TrapSummary } from "@/lib/types/trap";
+import { fetchTraps, fetchTrapsGrouped } from "@/lib/api/traps";
 import type { PaginatedResponse } from "@/lib/types/shared";
+import type { TrapGroupedSummary } from "@/lib/types/grouped";
 import type { Locale } from "@/lib/i18n";
 import type en from "@/lang/en.json";
 import { Arrow } from "@/components/svg/Arrow";
 import { weaponIcon } from "@/lib/cdn";
-import { TRAP_PLACEMENTS, TRAP_TARGETS, RARITIES_VISIBLE, ELEMENTS, RARITY_TEXT, RARITY_BG } from "@/lib/constants";
+import { TRAP_PLACEMENTS, RARITIES_VISIBLE, RARITY_TEXT, RARITY_BG } from "@/lib/constants";
 import { formatInt } from "@/lib/format";
 import { SkeletonWeaponGrid } from "@/components/ui/skeleton";
-import { AssetImage } from "@/components/ui/asset-image";
+import { FanCard, type FanVariant } from "@/components/public/FanCard";
 
 interface SearchTrapsViewProps {
   dict: typeof en;
   locale: Locale;
 }
 
-const RARITY_BORDER: Record<string, string> = {
-  common: "border-l-common",
-  uncommon: "border-l-uncommon",
-  rare: "border-l-rare",
-  epic: "border-l-epic",
-  legendary: "border-l-legendary",
-  mythic: "border-l-mythic",
-};
-
-const RARITY_GRADIENT: Record<string, string> = {
-  common: "from-common/5",
-  uncommon: "from-uncommon/5",
-  rare: "from-rare/10",
-  epic: "from-epic/10",
-  legendary: "from-legendary/10",
-  mythic: "from-mythic/15",
-};
-
 export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
   const [search, setSearch] = useState("");
   const [placement, setPlacement] = useState("");
-  const [target, setTarget] = useState("");
   const [rarity, setRarity] = useState("");
-  const [element, setElement] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<PaginatedResponse<TrapSummary> | null>(null);
+  const [result, setResult] = useState<PaginatedResponse<TrapGroupedSummary> | null>(null);
 
   const doSearch = useCallback(async () => {
     setLoading(true);
     try {
-      const params = {
+      const baseParams = {
         search: search || undefined,
         placement: placement || undefined,
-        target: target || undefined,
-        rarity: rarity || undefined,
-        element: element || undefined,
         page,
         limit: 24,
       };
-      const res = await fetchTraps(params);
+      const res = rarity
+        ? await fetchTraps({ ...baseParams, rarity }).then((r) => ({
+            ...r,
+            data: r.data.map(
+              (t): TrapGroupedSummary => ({
+                name: t.name,
+                baseSlug: t.slug,
+                maxRarity: t.rarity,
+                placement: t.placement,
+                trapType: t.trapType,
+                target: t.target,
+                element: t.element,
+                variants: [
+                  {
+                    slug: t.slug,
+                    rarity: t.rarity,
+                    icon: t.icon,
+                    iconUrl: weaponIcon(t.icon, "traps"),
+                    iconUrlLarge: weaponIcon(t.icon, "traps"),
+                  },
+                ],
+              }),
+            ),
+          }))
+        : await fetchTrapsGrouped(baseParams);
       setResult(res);
     } catch {
       setResult(null);
     } finally {
       setLoading(false);
     }
-  }, [search, placement, target, rarity, element, page]);
+  }, [search, placement, rarity, page]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, placement, target, rarity, element]);
+  }, [search, placement, rarity]);
 
   useEffect(() => {
     const t = setTimeout(doSearch, 300);
@@ -79,17 +79,15 @@ export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
   }, [doSearch]);
 
   const activeFilters = useMemo(
-    () => [placement, target, rarity, element, search].filter(Boolean).length,
-    [placement, target, rarity, element, search]
+    () => [placement, rarity, search].filter(Boolean).length,
+    [placement, rarity, search]
   );
   const hasFilters = activeFilters > 0;
 
   function resetAll() {
     setSearch("");
     setPlacement("");
-    setTarget("");
     setRarity("");
-    setElement("");
   }
 
   const total = result?.pagination.total ?? 0;
@@ -150,13 +148,6 @@ export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
               ))}
             </FilterGroup>
 
-            <FilterGroup label={dict.search.target}>
-              <FilterChip label={dict.search.all} active={!target} onClick={() => setTarget("")} />
-              {TRAP_TARGETS.map((t) => (
-                <FilterChip key={t} label={t} active={target === t} onClick={() => setTarget(t)} />
-              ))}
-            </FilterGroup>
-
             <FilterGroup label={dict.search.rarity}>
               <FilterChip label={dict.search.all} active={!rarity} onClick={() => setRarity("")} />
               {RARITIES_VISIBLE.map((r) => (
@@ -171,12 +162,6 @@ export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
               ))}
             </FilterGroup>
 
-            <FilterGroup label={dict.search.element}>
-              <FilterChip label={dict.search.all} active={!element} onClick={() => setElement("")} />
-              {ELEMENTS.map((e) => (
-                <FilterChip key={e} label={e} active={element === e} onClick={() => setElement(e)} />
-              ))}
-            </FilterGroup>
           </div>
         </div>
       </aside>
@@ -209,10 +194,35 @@ export function SearchTrapsView({ dict, locale }: SearchTrapsViewProps) {
           <EmptyState dict={dict} onReset={resetAll} hasFilters={hasFilters} />
         ) : result && result.data.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-              {result.data.map((trap) => (
-                <TrapCard key={trap.slug} trap={trap} locale={locale} />
-              ))}
+            <div className="grid grid-cols-2 gap-3 overflow-visible sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {result.data.map((trap) => {
+                const mainVariant = trap.variants.find((v) => v.rarity === trap.maxRarity) ?? trap.variants[trap.variants.length - 1];
+                const fanVariants: FanVariant[] = trap.variants.map((v) => ({
+                  rarity: v.rarity,
+                  href: `/${locale}/traps/${v.slug}`,
+                  iconUrl: v.iconUrl,
+                }));
+                return (
+                  <FanCard
+                    key={trap.baseSlug}
+                    name={trap.name}
+                    maxRarity={trap.maxRarity}
+                    mainIconUrl={mainVariant.iconUrl}
+                    variants={fanVariants}
+                    subtitle={
+                      <>
+                        <span className="truncate">{trap.placement}</span>
+                        {trap.element && trap.element !== "physical" && (
+                          <>
+                            <span className="text-border">·</span>
+                            <span className="truncate capitalize">{trap.element}</span>
+                          </>
+                        )}
+                      </>
+                    }
+                  />
+                );
+              })}
             </div>
 
             {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
@@ -246,47 +256,6 @@ function FilterChip({ label, active, onClick, dotClass, activeTextClass }: { lab
       {dotClass && <span className={`size-1.5 rounded-full ${dotClass}`} />}
       {label}
     </button>
-  );
-}
-
-function TrapCard({ trap, locale }: { trap: TrapSummary; locale: Locale }) {
-  const rarity = trap.rarity;
-  const borderColor = RARITY_BORDER[rarity] ?? "border-l-border";
-  const gradient = RARITY_GRADIENT[rarity] ?? "from-transparent";
-  const rarityTextColor = RARITY_TEXT[rarity] ?? "text-muted-foreground";
-  const rarityBgColor = RARITY_BG[rarity] ?? "bg-muted";
-
-  return (
-    <Link
-      href={`/${locale}/traps/${trap.slug}`}
-      className={`group relative flex flex-col overflow-hidden border border-border/50 border-l-2 ${borderColor} bg-card/40 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-card hover:shadow-lg`}
-    >
-      <div className={`relative flex aspect-square items-center justify-center overflow-hidden bg-linear-to-br ${gradient} to-transparent`}>
-        <span className={`absolute right-2 top-2 size-2 rounded-full ${rarityBgColor} shadow-sm`} />
-
-        <AssetImage
-          src={weaponIcon(trap.icon, "traps")}
-          alt={trap.name}
-          className="size-4/5 object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-110"
-          loading="lazy"
-        />
-      </div>
-
-      <div className="flex flex-col gap-0.5 border-t border-border/50 bg-card px-3 py-2.5">
-        <p className="truncate font-sans text-sm font-semibold leading-tight text-foreground">{trap.name}</p>
-        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-          <span className={`font-semibold ${rarityTextColor}`}>{rarity}</span>
-          <span className="text-border">·</span>
-          <span className="truncate">{trap.placement}</span>
-          {trap.element && trap.element !== "physical" && (
-            <>
-              <span className="text-border">·</span>
-              <span className="truncate capitalize">{trap.element}</span>
-            </>
-          )}
-        </p>
-      </div>
-    </Link>
   );
 }
 

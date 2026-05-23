@@ -4,7 +4,6 @@ import React, { useRef, useState, useEffect, useMemo } from "react"
 import { usePreviewScale } from "@/components/share/screenshot/usePreviewScale"
 import type { WeaponDetail, RangedWeaponDetail, TierData, Perk, PerkSlot } from "@/lib/types/weapon"
 import type { CalculatedStats } from "@/lib/types/calculate"
-import { parsePerkBonuses, formatBonusValue } from "@/lib/perks"
 import { perkIcon, teamPerkIcon, UNKNOWN_ICON, weaponIconLarge } from "@/lib/cdn"
 import { RARITY_TEXT, STAT_MAX, formatStatName } from "@/lib/constants"
 import { formatNumber } from "@/lib/format"
@@ -14,7 +13,7 @@ import { FbcnLogo } from "@/components/svg/FbcnLogo"
 import { ScreenshotQrCard } from "@/components/share/screenshot/ScreenshotQrCard"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Camera, Download, XIcon } from "lucide-react"
+import { Camera, Download, RotateCw, XIcon } from "lucide-react"
 import { domToJpeg } from "modern-screenshot"
 
 interface ScreenshotDialogProps {
@@ -224,27 +223,38 @@ export function ScreenshotDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="w-fit max-w-[95vw] gap-0 overflow-hidden bg-king-900 p-5 sm:max-w-[95vw]">
+      <DialogContent showCloseButton={false} className="w-fit max-w-[calc(100%-1rem)] gap-0 overflow-hidden bg-king-900 p-3 sm:max-w-[95vw] sm:p-5">
         {/* Header dialog : icone + titre + sous-titre, boutons a droite */}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg" style={{ border: "1px solid #4A2376", background: "rgba(49, 23, 79, 0.4)" }}>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg" style={{ border: "1px solid #4A2376", background: "rgba(49, 23, 79, 0.4)" }}>
               <Camera className="size-4 text-primary" />
             </div>
-            <div className="flex flex-col">
-              <DialogTitle className="text-base font-semibold leading-tight">Screenshot Preview</DialogTitle>
-              <p className="text-[11px] uppercase tracking-widest" style={{ color: "#9562D0" }}>Ready to share</p>
+            <div className="flex min-w-0 flex-col">
+              <DialogTitle className="truncate text-base font-semibold leading-tight">Screenshot Preview</DialogTitle>
+              <p className="hidden text-[11px] uppercase tracking-widest sm:block" style={{ color: "#9562D0" }}>Ready to share</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Button size="sm" onClick={handleDownload} disabled={downloading || !assetsReady}>
               <Download className="size-3.5" />
-              {!assetsReady ? "Loading..." : downloading ? "Exporting..." : "Download PNG"}
+              <span className="hidden sm:inline">
+                {!assetsReady ? "Loading..." : downloading ? "Exporting..." : "Download PNG"}
+              </span>
             </Button>
             <Button size="icon-sm" variant="ghost" onClick={() => onOpenChange(false)}>
               <XIcon className="size-4" />
             </Button>
           </div>
+        </div>
+
+        {/* Hint mobile portrait : le template 1920x1080 est minuscule en portrait,
+            invite l'utilisateur a tourner son tel pour mieux voir */}
+        <div
+          className="mb-3 hidden items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-foreground portrait:max-md:flex"
+        >
+          <RotateCw className="size-3.5 shrink-0 text-primary" />
+          <span>Rotate your phone to landscape for a bigger preview.</span>
         </div>
 
         {/* Cadre preview : dimensions calculees pour rester dans le viewport (largeur + hauteur) */}
@@ -561,8 +571,7 @@ function ScreenshotTemplateInner(
                           </div>
                           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                             <p className="truncate text-sm leading-tight" style={{ color: "#CAB0E8" }}>{commander.heroName} · <span className="capitalize">{commander.rarity}</span></p>
-                            <p className="truncate text-base font-bold leading-tight">{commander.perkName}</p>
-                            <p className="line-clamp-3 text-xs leading-snug" style={{ color: "#CAB0E8" }}>{commander.perkDescription}</p>
+                            <p className="line-clamp-3 text-sm font-semibold leading-snug">{commander.perkDescription}</p>
                           </div>
                         </div>
                       </div>
@@ -582,8 +591,7 @@ function ScreenshotTemplateInner(
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-xs leading-tight" style={{ color: "#CAB0E8" }}>{s.heroName}</p>
-                                <p className="truncate text-sm font-bold leading-tight">{s.perkName}</p>
-                                <p className="line-clamp-2 text-[11px] leading-snug" style={{ color: "#CAB0E8" }}>{s.perkDescription}</p>
+                                <p className="line-clamp-2 text-[11px] font-semibold leading-snug">{s.perkDescription}</p>
                               </div>
                             </div>
                           ))}
@@ -645,7 +653,6 @@ function ScreenshotTemplateInner(
                 ) : (
                   <div className="flex flex-col">
                     {activePerks.map(({ slot, perk }) => {
-                      const perkBonuses = parsePerkBonuses(perk)
                       const tierColor = RARITY_TEXT[perk.rarity] ?? "text-foreground"
                       return (
                         <div key={slot.slot} className="px-5 py-3" style={{ borderBottom: "1px solid #4A2376" }}>
@@ -657,18 +664,8 @@ function ScreenshotTemplateInner(
                               {perk.rarity}
                             </span>
                           </div>
-                          <p className="mt-1.5 text-lg font-bold uppercase leading-tight text-white">{perk.name}</p>
-                          {perkBonuses.length > 0 && (
-                            <p className="mt-1 text-sm leading-snug" style={{ color: "#CAB0E8" }}>
-                              {perkBonuses.map((b, i) => (
-                                <span key={i}>
-                                  {i > 0 && ", "}
-                                  <span className="font-semibold text-white">{formatBonusValue(b)}</span>
-                                  <span> {b.stat}</span>
-                                </span>
-                              ))}
-                            </p>
-                          )}
+                          {/* Description verbatim pour preserver le contexte (ex: element fire) */}
+                          <p className="mt-1.5 text-lg font-bold leading-tight text-white">{perk.description}</p>
                         </div>
                       )
                     })}

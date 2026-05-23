@@ -1,4 +1,5 @@
-import type { Rarity } from "@/lib/types/shared"
+import type { Rarity, PaginatedResponse } from "@/lib/types/shared"
+import type { HeroGroupedSummary } from "@/lib/types/grouped"
 import { api } from "./client"
 
 export type HeroClass = "soldier" | "constructor" | "ninja" | "outlander"
@@ -68,6 +69,10 @@ export interface HeroDetail extends HeroSummary {
 // ── Query params ─────────────────────────────────────────────────
 export interface HeroQueryParams {
   search?: string
+  // Filtre par terme de boost dans les perks/abilities (commander, standard, team).
+  // Ex: "minigun" -> tous les heros dont un perk mentionne minigun.
+  // Contraintes API : max 100 chars, regex ^[A-Za-z0-9 _-]+$ (sinon 400).
+  boosts?: string
   heroClass?: HeroClass
   subclass?: string
   rarity?: string
@@ -75,6 +80,31 @@ export interface HeroQueryParams {
   limit?: number
   sort?: string
 }
+
+// Regex de validation cote API. Le front filtre les caracteres a la saisie
+// pour eviter d'envoyer un input invalide qui renverrait un 400.
+export const BOOSTS_VALID_CHARS = /^[A-Za-z0-9 _-]+$/
+export const BOOSTS_MAX_LENGTH = 100
+
+// Strip les caracteres non autorises et trim. Renvoie une string safe a envoyer.
+export function sanitizeBoostsInput(raw: string): string {
+  return raw
+    .replace(/[^A-Za-z0-9 _-]/g, "")
+    .slice(0, BOOSTS_MAX_LENGTH)
+    .trim()
+}
+
+// Suggestions partagees entre HeroesView (sidebar) et SearchDialog (global).
+// Subset des termes recommandes par le back, focus sur les plus populaires.
+export const BOOST_SUGGESTIONS = [
+  "assault",
+  "sniper",
+  "shotgun",
+  "sword",
+  "crit damage",
+  "headshot",
+  "reload",
+] as const
 
 interface PaginatedHeroes {
   data: HeroSummary[]
@@ -96,6 +126,17 @@ export async function fetchHeroesByClass(
   params: Omit<HeroQueryParams, "heroClass"> = {},
 ): Promise<PaginatedHeroes> {
   return api.get<PaginatedHeroes>(`/v1/heroes/${heroClass}${toQueryString({ ...params })}`, { skipAuth: true })
+}
+
+// Variante groupee par nom (anti-duplication des rarites cote search).
+// Le back trie les variants ASC par rarete et fournit maxRarity au niveau groupe.
+export async function fetchHeroesGrouped(
+  params: HeroQueryParams = {},
+): Promise<PaginatedResponse<HeroGroupedSummary>> {
+  return api.get<PaginatedResponse<HeroGroupedSummary>>(
+    `/v1/heroes${toQueryString({ ...params, groupByName: true })}`,
+    { skipAuth: true },
+  )
 }
 
 export async function fetchHero(slug: string): Promise<HeroDetail> {

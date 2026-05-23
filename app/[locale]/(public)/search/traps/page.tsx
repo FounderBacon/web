@@ -29,7 +29,10 @@ export default async function SearchTrapsPage({ params }: { params: Promise<{ lo
 
   return (
     <SectionContainer className="relative mx-auto max-w-7xl px-4 py-10 md:px-10 md:py-16">
-      <FbcnLogo className="pointer-events-none absolute -right-20 -top-20 z-0 size-80 opacity-[0.03] md:size-125" />
+      {/* Wrapper clipping local pour eviter que le logo deborde a droite (overflow horizontal mobile) */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <FbcnLogo className="absolute -right-20 -top-20 z-0 size-80 opacity-[0.03] md:size-125" />
+      </div>
 
       <SearchPageHeader
         locale={locale as Locale}

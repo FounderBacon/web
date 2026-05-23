@@ -446,7 +446,7 @@ function ImageThumb({
         type="button"
         onClick={onRemove}
         aria-label={removeLabel}
-        className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-king-900/80 text-white opacity-0 transition-all group-hover:opacity-100 hover:bg-rare hover:text-king-900"
+        className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-king-900/80 text-white opacity-100 transition-all hover:bg-rare hover:text-king-900 md:opacity-0 md:group-hover:opacity-100"
       >
         <X className="size-3.5" />
       </button>

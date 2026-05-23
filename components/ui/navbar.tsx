@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { LoadoutTrigger } from "@/components/loadout/LoadoutTrigger"
 import { BgNavbar } from "@/components/svg/BgNavbar"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
@@ -24,6 +24,13 @@ export function Navbar({ locale, dict }: NavbarProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
+  // Ferme le burger des qu'on change de route (couvre clic sur Link interne,
+  // navigation depuis le SearchDialog, etc.). Evite que le burger reste
+  // ouvert sur la nouvelle page.
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
   function isActive(href: string): boolean {
     if (href.startsWith("http")) return false
     if (href === `/${locale}`) return pathname === `/${locale}` || pathname === `/${locale}/`
@@ -35,7 +42,9 @@ export function Navbar({ locale, dict }: NavbarProps) {
   }
 
   return (
-    <nav className="sticky top-0 z-50 w-full">
+    // overflow-hidden : clip le BgNavbar decoratif (-left-20) qui sinon
+    // cree du scroll horizontal sur toute la page en mobile
+    <nav className="sticky top-0 z-50 w-full overflow-hidden">
       <div className="flex items-center justify-between bg-king-700 px-8 py-4 dark:bg-king-700 md:px-12 lg:px-24 xl:px-48">
         <Link href={`/${locale}`} className="flex items-center gap-2">
           <FbcnLogo className="size-7 md:size-9" fill="#F2EBF9" />
@@ -78,7 +87,10 @@ export function Navbar({ locale, dict }: NavbarProps) {
 
       {open && (
         <div className="flex flex-col gap-4 bg-king-700 px-8 pb-6 dark:bg-king-700 lg:hidden">
-          <SearchBar locale={locale} variant="mobile" onNavigate={() => setOpen(false)} />
+          {/* Pas de onNavigate ici : fermer le burger demonterait le SearchBar
+              avant que le SearchDialog ait pu se monter. Le burger reste ouvert
+              sous le dialog (qui est un overlay full-screen, pas genant). */}
+          <SearchBar locale={locale} variant="mobile" />
           <Link
             href={`/${locale}/search`}
             className={linkClass(`/${locale}/search`)}

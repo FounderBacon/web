@@ -49,7 +49,7 @@ export function SearchPageHeader({ locale, active, title, subtitle, dict, counte
           <p className="text-xs text-muted-foreground md:text-sm">{subtitle}</p>
         </div>
 
-        <nav className="flex w-full items-center gap-1 border border-border/50 bg-background/40 p-1 md:w-fit">
+        <nav className="flex w-full min-w-0 items-center gap-1 border border-border/50 bg-background/40 p-1 md:w-fit">
           {TABS.map(({ key, href, labelKey }) => {
             const isActive = key === active
             const label = dict.search.hubCategories[labelKey].title
@@ -58,16 +58,17 @@ export function SearchPageHeader({ locale, active, title, subtitle, dict, counte
               <Link
                 key={key}
                 href={href(locale)}
-                className={`flex flex-1 items-center justify-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors md:flex-none ${
+                className={`flex min-w-0 flex-1 items-center justify-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors md:flex-none ${
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 aria-current={isActive ? "page" : undefined}
               >
-                <span>{label}</span>
+                <span className="truncate">{label}</span>
                 {count !== null && (
-                  <span className={`tabular-nums text-[10px] font-bold ${isActive ? "text-primary-foreground/70" : "text-muted-foreground/70"}`}>
+                  // Count masque sur mobile : eviterait de pousser le nav hors viewport
+                  <span className={`hidden tabular-nums text-[10px] font-bold md:inline ${isActive ? "text-primary-foreground/70" : "text-muted-foreground/70"}`}>
                     {formatInt(count)}
                   </span>
                 )}

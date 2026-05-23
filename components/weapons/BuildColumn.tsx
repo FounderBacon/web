@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { RotateCcw, ChevronDown } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { extractStatLabel } from "@/lib/perks"
 
 interface BuildColumnProps {
   slots: PerkSlot[]
@@ -79,10 +80,10 @@ export function BuildColumn({ slots, selectedPerks, onSelect, onHover, onResetAl
                   {slot.slot + 1}
                 </span>
 
-                {/* Nom du perk selectionne ou placeholder */}
+                {/* Stat name du perk selectionne ou placeholder */}
                 <div className="min-w-0 flex-1">
                   {selected ? (
-                    <p className="truncate text-sm font-semibold text-foreground">{selected.name}</p>
+                    <p className="truncate text-sm font-semibold capitalize text-foreground">{extractStatLabel(selected)}</p>
                   ) : (
                     <p className="text-sm italic text-muted-foreground">Empty</p>
                   )}
@@ -109,6 +110,7 @@ export function BuildColumn({ slots, selectedPerks, onSelect, onHover, onResetAl
                       <div className="space-y-0.5">
                         {groups.map((group) => {
                           const isActive = group.name === selectedName
+                          const statLabel = extractStatLabel(group.tiers[0])
                           return (
                             <Tooltip key={group.name}>
                                 <TooltipTrigger asChild>
@@ -117,18 +119,18 @@ export function BuildColumn({ slots, selectedPerks, onSelect, onHover, onResetAl
                                     onClick={() => onSelect(slot.slot, isActive ? null : group.tiers[0])}
                                     onMouseEnter={() => !isActive && onHover(group.tiers[0])}
                                     onMouseLeave={() => !isActive && onHover(null)}
-                                    className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm transition-colors ${
+                                    className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm capitalize transition-colors ${
                                       isActive
                                         ? "bg-primary/20 font-medium text-foreground"
                                         : "text-foreground/70 hover:bg-muted hover:text-foreground"
                                     }`}
                                   >
                                     {/* TODO: icone perk quand dispo */}
-                                    <span className="truncate">{group.name}</span>
+                                    <span className="truncate">{statLabel}</span>
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="flex max-w-72 flex-col items-start gap-1 bg-popover text-start text-popover-foreground">
-                                  <p className="text-xs font-semibold">{group.name}</p>
+                                  <p className="text-xs font-semibold capitalize">{statLabel}</p>
                                   <p className="text-xs leading-relaxed text-muted-foreground">{group.tiers[0].description}</p>
                                 </TooltipContent>
                             </Tooltip>
