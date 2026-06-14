@@ -26,7 +26,7 @@ export interface HeroAbility {
   element: string
   damageType: string
   damageMultiplier: number | null
-  stats: HeroAbilityStats
+  stats?: HeroAbilityStats
 }
 
 export interface HeroTier {

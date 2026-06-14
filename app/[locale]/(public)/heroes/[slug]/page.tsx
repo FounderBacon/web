@@ -59,7 +59,7 @@ function PerkCard({ perk, label, primary, accent, rarityColor, kind }: { perk: H
 
 // ── Carte ability : icone + stats en pills ──────────────────────
 function AbilityCard({ ability }: { ability: HeroAbility }) {
-  const stats = ability.stats;
+  const stats = ability.stats ?? {};
   const hasStats = [stats.cooldown, stats.cost, stats.duration, stats.radius, stats.weaponDamage, stats.fireRate, stats.attackSpeed].some((v) => typeof v === "number");
   return (
     <article className="flex flex-col gap-3 border border-border/50 bg-card/40 p-5">
