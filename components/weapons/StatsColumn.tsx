@@ -10,9 +10,11 @@ import {
   bonusColor,
   formatStatName,
 } from "@/lib/constants"
+import { formatStat } from "@/lib/format"
 
 interface StatsColumnProps {
   baseStats: CalculatedStats | null
+  heroStats?: CalculatedStats | null
   modifiedStats: CalculatedStats | null
   isRanged: boolean
   loading?: boolean
@@ -27,7 +29,7 @@ const AMMO_STATS = ["maxSpareAmmo", "ammoCost"] as const
 const DURABILITY_STATS = ["durability", "durabilityPerUse", "totalShots", "totalHits"] as const
 const MELEE_STATS = ["attackSpeed", "swingTime", "swingPlaySpeed", "range", "coneAngle", "conePitch"] as const
 
-export function StatsColumn({ baseStats, modifiedStats, isRanged, loading }: StatsColumnProps) {
+export function StatsColumn({ baseStats, heroStats, modifiedStats, isRanged, loading }: StatsColumnProps) {
   if (!baseStats || !modifiedStats) {
     return (
       <div className="overflow-hidden border border-border/50">
@@ -42,9 +44,10 @@ export function StatsColumn({ baseStats, modifiedStats, isRanged, loading }: Sta
   }
 
   const base = baseStats as unknown as Record<string, unknown>
+  const hero = (heroStats ?? baseStats) as unknown as Record<string, unknown>
   const modified = modifiedStats as unknown as Record<string, unknown>
 
-  const hasPerks = baseStats !== modifiedStats
+  const hasPerks = (heroStats ?? baseStats) !== modifiedStats
 
   const dpsMetrics = [
     { label: "DPS", value: modifiedStats.dps, base: baseStats.dps },
@@ -121,7 +124,7 @@ export function StatsColumn({ baseStats, modifiedStats, isRanged, loading }: Sta
               <AccordionContent>
                 <div className="space-y-2">
                   {presentStats.map((key) => (
-                    <StatRow key={key} statKey={key} baseVal={base[key]} modifiedVal={modified[key]} />
+                    <StatRow key={key} statKey={key} baseVal={base[key]} heroVal={hero[key]} modifiedVal={modified[key]} />
                   ))}
                 </div>
               </AccordionContent>
@@ -155,7 +158,7 @@ function DpsStatRow({
       <span className="shrink-0 text-right text-lg font-bold tabular-nums text-foreground">
         {fmt(value)}{suffix}
       </span>
-      <span className={`w-16 shrink-0 text-right text-base tabular-nums ${hasChange ? bonusColor(change) : "text-common-dark dark:text-common"}`}>
+      <span className={`w-24 shrink-0 text-right text-base tabular-nums ${hasChange ? bonusColor(change) : "text-common-dark dark:text-common"}`}>
         {hasChange && (suffix === "%" ? (change > 0 ? "+" : "") : (change > 0 ? "+" : ""))}
         {hasChange ? fmt(change) + suffix : "0"}
       </span>
@@ -183,10 +186,12 @@ function DpsLabel({ label, desc }: { label: string; desc?: string }) {
 function StatRow({
   statKey,
   baseVal,
+  heroVal,
   modifiedVal,
 }: {
   statKey: string
   baseVal: unknown
+  heroVal: unknown
   modifiedVal: unknown
 }) {
   if (typeof baseVal === "string" || typeof baseVal === "boolean") {
@@ -201,30 +206,100 @@ function StatRow({
   }
 
   const base = baseVal as number
+  const hero = (typeof heroVal === "number" ? heroVal : base) as number
   const current = modifiedVal as number
-  const max = STAT_MAX[statKey] ?? Math.max(base * 2, 100)
+  // Le max doit toujours laisser de la marge au-dessus du current pour que les bonus restent visibles.
+  // STAT_MAX est une reference theorique — on l'ignore si la valeur reelle la depasse.
+  const max = Math.max(STAT_MAX[statKey] ?? 0, current * 1.15, base * 1.15, 1)
 
-  const baseWidth = Math.min((base / max) * 100, 100)
-  const modWidth = Math.min((current / max) * 100, 100)
-  const hasModification = Math.abs(current - base) > 0.001
-  const delta = current - base
+  const heroDelta = hero - base
+  const perksDelta = current - hero
+  const totalDelta = current - base
+  const hasModification = Math.abs(totalDelta) > 0.001
 
   return (
     <div>
       <div className="mb-1 flex items-baseline gap-2">
         <span className="min-w-0 flex-1"><StatLabel statKey={statKey} /></span>
-        <span className={`shrink-0 text-right text-lg font-bold tabular-nums ${hasModification ? bonusColor(delta) : "text-foreground"}`}>
+        <span className={`shrink-0 text-right text-lg font-bold tabular-nums ${hasModification ? bonusColor(totalDelta) : "text-foreground"}`}>
           {fmt(current)}
         </span>
-        <span className={`w-16 shrink-0 text-right text-base tabular-nums ${hasModification ? bonusColor(delta) : "text-common-dark dark:text-common"}`}>
-          {hasModification ? (delta > 0 ? "+" : "") + fmt(delta) : "0"}
+        <span className={`w-24 shrink-0 text-right text-base tabular-nums ${hasModification ? bonusColor(totalDelta) : "text-common-dark dark:text-common"}`}>
+          {hasModification ? (totalDelta > 0 ? "+" : "") + fmt(totalDelta) : "0"}
         </span>
       </div>
-      <div className="relative h-2 w-full overflow-hidden rounded-sm bg-king-800/30 dark:bg-king-50/15">
-        <div className="absolute inset-y-0 left-0 rounded-sm bg-primary/40 transition-all duration-200" style={{ width: `${baseWidth}%` }} />
-        <div className="absolute inset-y-0 rounded-sm bg-uncommon transition-all duration-200" style={{ left: `${baseWidth}%`, width: `${delta > 0 ? modWidth - baseWidth : 0}%` }} />
-        <div className="absolute inset-y-0 rounded-sm bg-malus transition-all duration-200" style={{ left: `${delta < 0 ? modWidth : baseWidth}%`, width: `${delta < 0 ? baseWidth - modWidth : 0}%` }} />
-      </div>
+      <StackedBar statKey={statKey} base={base} hero={hero} current={current} max={max} />
+    </div>
+  )
+}
+
+// Jauge a 3 segments avec tooltip detaillant le breakdown
+function StackedBar({ statKey, base, hero, current, max }: { statKey: string; base: number; hero: number; current: number; max: number }) {
+  const pct = (n: number) => Math.max(0, Math.min((n / max) * 100, 100))
+  const heroDelta = hero - base
+  const perksDelta = current - hero
+
+  const baseW = pct(base)
+  const heroW = pct(hero)
+  const modW = pct(current)
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="relative h-2 w-full cursor-help overflow-hidden rounded-sm bg-king-800/30 dark:bg-king-50/15">
+          <div className="absolute inset-y-0 left-0 rounded-sm bg-primary/40 transition-all duration-200" style={{ width: `${Math.min(baseW, heroW, modW)}%` }} />
+          {heroDelta > 0 && (
+            <div className="absolute inset-y-0 rounded-sm bg-legendary transition-all duration-200" style={{ left: `${baseW}%`, width: `${Math.max(0, Math.min(heroW, modW) - baseW)}%` }} />
+          )}
+          {perksDelta > 0 && (
+            <div className="absolute inset-y-0 rounded-sm bg-uncommon transition-all duration-200" style={{ left: `${heroW}%`, width: `${Math.max(0, modW - heroW)}%` }} />
+          )}
+          {heroDelta < 0 && (
+            <div className="absolute inset-y-0 rounded-sm bg-malus transition-all duration-200" style={{ left: `${Math.max(heroW, modW)}%`, width: `${Math.max(0, baseW - Math.max(heroW, modW))}%` }} />
+          )}
+          {perksDelta < 0 && (
+            <div className="absolute inset-y-0 rounded-sm bg-malus transition-all duration-200" style={{ left: `${modW}%`, width: `${Math.max(0, heroW - modW)}%` }} />
+          )}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="min-w-44">
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-semibold">{formatStatName(statKey)}</p>
+          <BreakdownRow color="bg-primary/60" label="Base" value={fmt(base)} />
+          {heroDelta !== 0 && (
+            <BreakdownRow
+              color="bg-legendary-dark dark:bg-legendary"
+              label="Heroes"
+              value={(heroDelta > 0 ? "+" : "") + fmt(heroDelta)}
+              valueClass={bonusColor(heroDelta)}
+            />
+          )}
+          {perksDelta !== 0 && (
+            <BreakdownRow
+              color="bg-uncommon-dark dark:bg-uncommon"
+              label="Perks"
+              value={(perksDelta > 0 ? "+" : "") + fmt(perksDelta)}
+              valueClass={bonusColor(perksDelta)}
+            />
+          )}
+          <div className="mt-0.5 flex items-center justify-between border-t border-border/40 pt-1 text-xs font-bold">
+            <span>Total</span>
+            <span className="tabular-nums">{fmt(current)}</span>
+          </div>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+function BreakdownRow({ color, label, value, valueClass }: { color: string; label: string; value: string; valueClass?: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 text-xs">
+      <span className="flex items-center gap-1.5">
+        <span className={`size-2 rounded-sm ${color}`} />
+        <span className="text-muted-foreground">{label}</span>
+      </span>
+      <span className={`tabular-nums ${valueClass ?? ""}`}>{value}</span>
     </div>
   )
 }
@@ -249,7 +324,4 @@ function StatLabel({ statKey }: { statKey: string }) {
   )
 }
 
-function fmt(n: number | undefined | null): string {
-  if (typeof n !== "number" || Number.isNaN(n)) return "—"
-  return n % 1 === 0 ? String(n) : n.toFixed(2)
-}
+const fmt = formatStat

@@ -10,9 +10,16 @@ declare module "axios" {
 
 const isServer = typeof window === "undefined"
 
+const baseURL = (isServer ? process.env.API_URL_INTERNAL : undefined)
+  ?? process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")
+
+if (!baseURL) {
+  // NEXT_PUBLIC_API_URL doit etre defini au build pour etre inline dans le bundle client
+  throw new Error("NEXT_PUBLIC_API_URL is not defined")
+}
+
 const instance = axios.create({
-  baseURL: (isServer ? process.env.API_URL_INTERNAL : undefined)
-    ?? process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, ""),
+  baseURL,
   headers: {
     "Content-Type": "application/json",
     ...(isServer ? { "User-Agent": "founderbacon-web-ssr/1.0" } : {}),

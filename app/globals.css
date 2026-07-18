@@ -70,6 +70,10 @@
   --color-legendary-dark: #833819;
   --color-mythic: #E2C55B;
   --color-mythic-dark: #837235;
+  --color-ruby: #FF1744;
+  --color-ruby-dark: #7A0F25;
+  --color-diamond: #A0E8FF;
+  --color-diamond-dark: #3D7E96;
 
   /* Malus */
   --color-malus: #E25B60;
@@ -262,5 +266,34 @@ label[for], [tabindex]:not([tabindex="-1"]) {
     animation: none;
     opacity: 0.6;
   }
+}
+
+/* ── Roadmap scrollbar custom (timeline horizontale) ─────────── */
+.roadmap-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) color-mix(in oklab, var(--muted) 60%, transparent);
+}
+.roadmap-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+.roadmap-scroll::-webkit-scrollbar-track {
+  background: color-mix(in oklab, var(--muted) 40%, transparent);
+  border-radius: 4px;
+}
+.roadmap-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--primary) 70%, transparent);
+  border-radius: 4px;
+}
+.roadmap-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Pulse subtil pour les milestones in-progress */
+@keyframes roadmap-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 40%, transparent); }
+  50% { box-shadow: 0 0 0 8px transparent; }
+}
+.roadmap-pulse {
+  animation: roadmap-pulse 2s ease-in-out infinite;
 }
 

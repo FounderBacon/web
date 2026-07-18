@@ -1,13 +1,19 @@
 import type { Metadata } from "next"
-import { getDictionary, isValidLocale } from "@/lib/i18n"
+import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n"
+import { pageAlternates } from "@/lib/seo"
 import { SectionContainer } from "@/components/public/SectionContainer"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
 import { SearchHubGrid } from "@/components/public/SearchHubGrid"
 import { fetchCounters, type ItemCounters } from "@/lib/api/weapons"
 
-export const metadata: Metadata = {
-  title: "Search",
-  description: "Browse weapons, heroes, traps and survivors from Fortnite: Save the World.",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  return {
+    title: "Search",
+    description: "Browse weapons, heroes and traps from Fortnite: Save the World.",
+    alternates: pageAlternates(locale, "/search"),
+  }
 }
 
 export const dynamic = "force-dynamic"
@@ -20,18 +26,10 @@ export default async function SearchHubPage({ params }: { params: Promise<{ loca
 
   // Fetch compteurs cote serveur (fallback silencieux si API down)
   let counters: ItemCounters | null = null
-  console.log("[search] API_URL =", process.env.NEXT_PUBLIC_API_URL)
   try {
     counters = await fetchCounters()
-    console.log("[search] counters OK", counters)
-  } catch (e) {
-    const err = e as { status?: number; message?: string; response?: { data?: unknown; headers?: unknown } }
-    console.log("[search] counters FAIL", {
-      status: err.status,
-      message: err.message,
-      data: err.response?.data,
-      headers: err.response?.headers,
-    })
+  } catch {
+    // API down : on affiche sans compteurs
   }
 
   return (

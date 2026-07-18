@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import type { Locale } from "@/lib/i18n"
 import type en from "@/lang/en.json"
 import type { ItemCounters } from "@/lib/api/weapons"
+import { formatInt } from "@/lib/format"
 
 interface HubCategory {
   key: "weapons" | "heroes" | "traps" | "survivors"
@@ -14,19 +15,18 @@ interface HubCategory {
   available: boolean
 }
 
-// Formate un nombre style "1,247" / "523"
 function formatCount(n: number | undefined): string | null {
   if (typeof n !== "number" || n <= 0) return null
-  return n.toLocaleString("en-US")
+  return formatInt(n)
 }
 
 function buildCategories(locale: Locale, counters: ItemCounters | null): HubCategory[] {
   const weaponsTotal = counters ? counters.ranged + counters.melee : undefined
+  // Survivors temporairement masques (soft-delete) — code conserve pour reactivation future
   return [
     { key: "weapons",   href: `/${locale}/search/weapons`, count: formatCount(weaponsTotal),     version: "v0.2.0", available: true  },
     { key: "traps",     href: `/${locale}/search/traps`,   count: formatCount(counters?.trap),   version: "v0.2.0", available: true  },
-    { key: "heroes",    href: null,                        count: null,                          version: "v0.3.0", available: false },
-    { key: "survivors", href: null,                        count: null,                          version: "v0.4.0", available: false },
+    { key: "heroes",    href: `/${locale}/search/heroes`,  count: formatCount(counters?.hero),   version: "v0.3.0", available: true  },
   ]
 }
 

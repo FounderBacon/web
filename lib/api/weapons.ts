@@ -1,12 +1,16 @@
 import { api } from "./client"
 import type { PaginatedResponse, WeaponSummary, MeleeWeaponSummary, WeaponQueryParams, MeleeQueryParams, RangedWeaponDetail, MeleeWeaponDetail, WeaponDetail } from "@/lib/types/weapon"
 import type { CalculateParams, CalculatedResponse } from "@/lib/types/calculate"
+import type { RangedWeaponGroupedSummary, MeleeWeaponGroupedSummary } from "@/lib/types/grouped"
 
 // ── Counters (compteurs globaux par categorie) ──────────
 export interface ItemCounters {
   melee: number
   ranged: number
   trap: number
+  hero?: number
+  survivor?: number
+  worker?: number
 }
 
 export async function fetchCounters(): Promise<ItemCounters> {
@@ -25,6 +29,15 @@ export async function fetchRangedWeapons(params: WeaponQueryParams = {}): Promis
 
 export async function fetchMeleeWeapons(params: MeleeQueryParams = {}): Promise<PaginatedResponse<MeleeWeaponSummary>> {
   return api.get<PaginatedResponse<MeleeWeaponSummary>>(`/v1/weapons/melee${toQueryString({ ...params })}`, { skipAuth: true })
+}
+
+// Variantes groupees par nom (anti-duplication des rarites cote search).
+export async function fetchRangedWeaponsGrouped(params: WeaponQueryParams = {}): Promise<PaginatedResponse<RangedWeaponGroupedSummary>> {
+  return api.get<PaginatedResponse<RangedWeaponGroupedSummary>>(`/v1/weapons/ranged${toQueryString({ ...params, groupByName: true })}`, { skipAuth: true })
+}
+
+export async function fetchMeleeWeaponsGrouped(params: MeleeQueryParams = {}): Promise<PaginatedResponse<MeleeWeaponGroupedSummary>> {
+  return api.get<PaginatedResponse<MeleeWeaponGroupedSummary>>(`/v1/weapons/melee${toQueryString({ ...params, groupByName: true })}`, { skipAuth: true })
 }
 
 export async function fetchRangedWeapon(slug: string): Promise<RangedWeaponDetail> {

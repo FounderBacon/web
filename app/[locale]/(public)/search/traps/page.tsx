@@ -1,42 +1,50 @@
 import type { Metadata } from "next"
-import Link from "next/link"
-import { ChevronLeft } from "lucide-react"
-import { getDictionary, isValidLocale } from "@/lib/i18n"
+import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n"
+import { pageAlternates } from "@/lib/seo"
+import { SearchPageHeader } from "@/components/public/SearchPageHeader"
 import { SearchTrapsView } from "@/components/public/SearchTrapsView"
 import { SectionContainer } from "@/components/public/SectionContainer"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
+import { fetchCounters, type ItemCounters } from "@/lib/api/weapons"
 
-export const metadata: Metadata = {
-  title: "Search Traps",
-  description: "Search and browse all traps from Fortnite: Save the World.",
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isValidLocale(raw) ? raw : "en"
+  return {
+    title: "Search Traps",
+    description: "Search and browse all traps from Fortnite: Save the World.",
+    alternates: pageAlternates(locale, "/search/traps"),
+  }
 }
+
+export const dynamic = "force-dynamic"
 
 export default async function SearchTrapsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   if (!isValidLocale(locale)) return null
 
   const dict = await getDictionary(locale)
+  let counters: ItemCounters | null = null
+  try { counters = await fetchCounters() } catch { /* fallback silencieux */ }
 
   return (
-    <SectionContainer className="relative mx-auto max-w-7xl overflow-hidden px-4 py-10 md:px-10 md:py-16">
-      {/* Logo en filigrane */}
-      <FbcnLogo className="pointer-events-none absolute -right-20 -top-20 z-0 size-80 opacity-[0.03] md:size-125" />
-
-      {/* Hero header */}
-      <div className="relative z-10 mb-10 flex flex-col gap-3 border-b border-border/50 pb-8 md:mb-14">
-        <Link
-          href={`/${locale}/search`}
-          className="flex w-fit items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ChevronLeft className="size-3" />
-          {dict.search.backToHub}
-        </Link>
-        <h1 className="font-burbank text-5xl uppercase leading-none text-foreground md:text-7xl">{dict.search.trapsTitle}</h1>
-        <p className="text-sm text-muted-foreground">{dict.search.subtitle}</p>
+    <SectionContainer className="relative mx-auto max-w-7xl px-4 py-10 md:px-10 md:py-16">
+      {/* Wrapper clipping local pour eviter que le logo deborde a droite (overflow horizontal mobile) */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <FbcnLogo className="absolute -right-20 -top-20 z-0 size-80 opacity-[0.03] md:size-125" />
       </div>
 
+      <SearchPageHeader
+        locale={locale as Locale}
+        active="traps"
+        title={dict.search.trapsTitle}
+        subtitle={dict.search.subtitle}
+        dict={dict}
+        counters={counters}
+      />
+
       <div className="relative z-10">
-        <SearchTrapsView dict={dict} locale={locale} />
+        <SearchTrapsView dict={dict} locale={locale as Locale} />
       </div>
     </SectionContainer>
   )
