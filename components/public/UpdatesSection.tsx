@@ -44,7 +44,7 @@ export async function UpdatesSection({ locale }: { locale: Locale }) {
 
   if (failed || entries.length === 0) {
     return (
-      <section className="px-8 py-16 md:px-48 md:py-24">
+      <section className="px-5 py-12 sm:px-8 md:px-48 md:py-24">
         <h2 className="mb-6 font-burbank text-3xl uppercase text-primary-foreground md:text-4xl">Changelog</h2>
         <p className="border border-king-700/50 bg-king-800/40 px-4 py-8 text-center text-sm text-muted-foreground backdrop-blur-sm">
           {failed ? "Changelog unavailable for now. Try again in a few minutes." : "No releases yet."}
@@ -55,12 +55,14 @@ export async function UpdatesSection({ locale }: { locale: Locale }) {
   const latest = entries[0];
 
   return (
-    <section className="px-8 py-16 md:px-12 md:py-20 lg:px-24 lg:py-24 xl:px-48">
-      <div className="grid grid-cols-1 gap-10 md:grid-cols-4 md:gap-8 lg:gap-12">
-        {/* Colonne gauche : liste des changelogs (3/4) */}
-        <div className="md:col-span-3">
+    <section className="px-5 py-12 sm:px-8 md:px-12 md:py-20 lg:px-24 lg:py-24 xl:px-48">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-4 md:gap-8 lg:gap-12">
+        {/* Colonne gauche : liste des changelogs (3/4).
+            order-2 en mobile : l'aside "Last update" passe avant la liste,
+            sinon il faut scroller 5 entrees pour atteindre l'info resumee. */}
+        <div className="order-2 md:order-0 md:col-span-3">
           <h2 className="mb-6 font-burbank text-3xl uppercase text-primary-foreground md:text-4xl">Changelog</h2>
-          <ul className="flex flex-col gap-6">
+          <ul className="flex flex-col gap-4 md:gap-6">
             {entries.map((entry) => (
               <li key={entry._id}>
                 <Link href={`/${locale}/changelog/${entrySlug(entry)}`} className={`relative block bg-king-800/40 p-4 backdrop-blur-sm transition-colors hover:bg-king-800/60 ${(entry.rarity && RARITY_DECO[entry.rarity]) ?? "text-primary"}`}>
@@ -91,15 +93,15 @@ export async function UpdatesSection({ locale }: { locale: Locale }) {
         </div>
 
         {/* Colonne droite : last update + socials (1/4) */}
-        <aside className="md:col-span-1">
-          <div className="flex flex-col gap-2 border-l-2 border-primary/40 pl-4">
+        <aside className="order-1 md:order-0 md:col-span-1">
+          <div className="flex flex-col gap-1.5 border-l-2 border-primary/40 pl-4 md:gap-2">
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Last update</span>
-            <span className="font-burbank text-5xl uppercase leading-none text-primary-foreground md:text-6xl">v{latest.version}</span>
+            <span className="font-burbank text-4xl uppercase leading-none text-primary-foreground sm:text-5xl md:text-6xl">v{latest.version}</span>
             <span className="text-sm text-muted-foreground">{formatDate(latest.releaseDate, locale)}</span>
             <p className="mt-2 text-sm font-medium text-foreground">{latest.title}</p>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 pl-4">
+          <div className="mt-6 flex flex-col gap-3 pl-4 md:mt-8">
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Follow</span>
             <div className="flex flex-wrap gap-2">
               {SOCIALS.map(({ href, label }) => (
