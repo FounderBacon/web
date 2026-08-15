@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from "react"
 import { Separator } from "@/components/ui/separator"
 import { RARITY_TEXT } from "@/lib/constants"
 import { HeroBonusSection } from "@/components/weapons/HeroBonusSection"
+import { groupPerks, type PerkGroup } from "@/lib/perks"
 
 interface EffectsColumnProps {
   tierData: TierData
@@ -14,21 +15,6 @@ interface EffectsColumnProps {
   isRanged: boolean
   weaponPerk?: Perk | null
   weaponPerkLevel?: number
-}
-
-interface PerkGroup {
-  name: string
-  tiers: Perk[]
-}
-
-function groupPerks(perks: Perk[]): PerkGroup[] {
-  const map = new Map<string, Perk[]>()
-  for (const perk of perks) {
-    if (!perk.name) continue
-    if (!map.has(perk.name)) map.set(perk.name, [])
-    map.get(perk.name)!.push(perk)
-  }
-  return Array.from(map.entries()).map(([name, tiers]) => ({ name, tiers }))
 }
 
 export function EffectsColumn({
@@ -105,7 +91,7 @@ export function EffectsColumn({
             )}
           </div>
           <div className="p-4">
-            <p className="text-sm font-medium text-foreground">{weaponPerk.name}</p>
+            {weaponPerk.name && <p className="text-sm font-medium text-foreground">{weaponPerk.name}</p>}
             <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{weaponPerk.description}</p>
           </div>
         </div>
