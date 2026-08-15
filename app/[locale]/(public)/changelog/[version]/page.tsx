@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowLeft, Code2, Layers } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { fetchChangelogBySlug, type ChangelogCategory, type ChangelogItem } from "@/lib/api/changelog"
+import { fetchChangelogBySlug, type ChangelogCategory, type ChangelogImage, type ChangelogItem } from "@/lib/api/changelog"
 import { RARITY_DECO } from "@/lib/constants"
 import { isValidLocale, type Locale } from "@/lib/i18n"
 import { articleSchema, breadcrumbSchema } from "@/lib/jsonld"
@@ -57,6 +57,37 @@ function scopeMeta(scope: string) {
       description: "",
       accent: "text-foreground",
     }
+  )
+}
+
+// Galerie d'illustrations : 1 image = pleine largeur, 2+ = grille.
+// Balise <img> native (page server component) avec lazy loading — les
+// captures ne sont jamais au-dessus de la ligne de flottaison.
+function ChangelogImages({ images, className = "" }: { images: ChangelogImage[]; className?: string }) {
+  if (images.length === 0) return null
+  const isSingle = images.length === 1
+  return (
+    <div className={`grid gap-3 ${isSingle ? "max-w-md" : "sm:grid-cols-2"} ${className}`}>
+      {images.map((img) => (
+        <figure key={img.url} className="overflow-hidden border border-border/40 bg-muted/20">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={img.url}
+            alt={img.alt}
+            loading="lazy"
+            decoding="async"
+            // Hauteur plafonnee plutot que largeur imposee : une capture large
+            // et une icone carree restent toutes deux lisibles sans dominer la page.
+            className={`w-full object-contain ${isSingle ? "max-h-80" : "max-h-56"}`}
+          />
+          {img.caption && (
+            <figcaption className="border-t border-border/40 px-3 py-2 text-xs text-muted-foreground">
+              {img.caption}
+            </figcaption>
+          )}
+        </figure>
+      ))}
+    </div>
   )
 }
 
@@ -180,6 +211,11 @@ export default async function ChangelogVersionPage({ params }: PageProps) {
       {/* Summary */}
       <p className="mb-10 text-base leading-relaxed text-foreground md:text-lg">{entry.summary}</p>
 
+      {/* Illustrations de la release */}
+      {entry.images && entry.images.length > 0 && (
+        <ChangelogImages images={entry.images} className="mb-10" />
+      )}
+
       {/* Migration notes */}
       {entry.migrationNotes && (
         <aside className="mb-10 flex gap-4 border-l-4 border-l-malus bg-malus/5 p-5">
@@ -277,6 +313,9 @@ export default async function ChangelogVersionPage({ params }: PageProps) {
                                   </span>
                                 ))}
                               </div>
+                            )}
+                            {it.images && it.images.length > 0 && (
+                              <ChangelogImages images={it.images} />
                             )}
                           </li>
                         ))}

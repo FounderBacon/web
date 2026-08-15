@@ -11,7 +11,7 @@ import { abilityIcon, perkIcon, teamPerkIcon } from "@/lib/cdn";
 import { RARITY_BORDER, RARITY_DECO, RARITY_TEXT } from "@/lib/constants";
 import { isValidLocale, type Locale } from "@/lib/i18n";
 import { breadcrumbSchema, thingPageSchema } from "@/lib/jsonld";
-import { pageAlternates } from "@/lib/seo";
+import { itemDescription, itemTitle, nameFromSlug, pageAlternates } from "@/lib/seo";
 import { JsonLd } from "@/components/common/JsonLd";
 
 export const dynamic = "force-dynamic";
@@ -26,13 +26,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const alternates = pageAlternates(locale, `/heroes/${slug}`);
   try {
     const hero = await fetchHero(slug);
+    const description = itemDescription({
+      name: hero.name,
+      description: hero.description,
+      qualifiers: [hero.rarity, hero.heroClass],
+      kind: "hero",
+    });
     return {
-      title: hero.name,
-      description: hero.description || `${hero.name}, a ${hero.rarity} ${hero.heroClass} hero from Fortnite Save the World.`,
+      title: itemTitle(hero.name),
+      description,
+      openGraph: {
+        title: `${hero.name} | FounderBacon`,
+        description,
+        type: "article",
+      },
       alternates,
     };
   } catch {
-    return { title: "Hero", alternates };
+    const name = nameFromSlug(slug, { stripRarity: true });
+    return {
+      title: itemTitle(name),
+      description: itemDescription({ name, kind: "hero" }),
+      alternates,
+    };
   }
 }
 

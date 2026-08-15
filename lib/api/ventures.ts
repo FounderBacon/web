@@ -63,6 +63,18 @@ export async function fetchVentureByWeekId(weekId: string): Promise<VentureWeek>
   return api.get<VentureWeek>(`/v1/bacon/ventures/${weekId}`, { skipAuth: true })
 }
 
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+
+// returnDate est la date de DEBUT de la semaine venture ("Aug 5" pour la
+// semaine 2026-32), pas sa fin : l'API n'expose aucune date de fin. On derive
+// donc la rotation a +7 jours (les weekId suivent la numerotation ISO).
+// A remplacer par le champ API des qu'il existe (cf. endsAt cote back).
+export function ventureEndDate(week: Pick<VentureWeek, "returnDate">): Date | null {
+  const start = new Date(week.returnDate)
+  if (Number.isNaN(start.getTime())) return null
+  return new Date(start.getTime() + WEEK_MS)
+}
+
 // Le name renvoye par l'API contient des espaces multiples et la categorie collee.
 // Ex: "Scurvy Shoals             (Bouncy Husks)        Mutant Season"
 // On extrait juste le nom du venture (avant la premiere double-space ou parenthese).

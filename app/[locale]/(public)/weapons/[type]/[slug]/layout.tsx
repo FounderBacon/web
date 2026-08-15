@@ -1,33 +1,49 @@
 import type { Metadata } from "next"
 import { JsonLd } from "@/components/common/JsonLd"
+import { fetchRangedWeapon, fetchMeleeWeapon } from "@/lib/api/weapons"
+import { weaponIconLarge } from "@/lib/cdn"
 import { isValidLocale, type Locale } from "@/lib/i18n"
 import { breadcrumbSchema, thingPageSchema } from "@/lib/jsonld"
-import { pageAlternates } from "@/lib/seo"
+import { itemDescription, itemTitle, nameFromSlug, pageAlternates } from "@/lib/seo"
+import type { WeaponDetail } from "@/lib/types/weapon"
 
 interface Props {
   params: Promise<{ locale: string; type: string; slug: string }>
   children: React.ReactNode
 }
 
-// Dérive un nom lisible depuis le slug (sans la rarité finale)
-function nameFromSlug(slug: string): string {
-  return slug
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (s) => s.toUpperCase())
-    .replace(/\s\w+$/, "")
+// Le fetch est dedupe par Next entre generateMetadata et le layout :
+// deux appels ici = une seule requete API.
+async function getWeapon(type: string, slug: string): Promise<WeaponDetail | null> {
+  try {
+    return type === "melee" ? await fetchMeleeWeapon(slug) : await fetchRangedWeapon(slug)
+  } catch {
+    // API down ou slug inconnu : on retombe sur les metadonnees derivees du slug
+    // plutot que de casser le rendu de la page.
+    return null
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale: raw, type, slug } = await params
   const locale: Locale = isValidLocale(raw) ? raw : "en"
-  const name = nameFromSlug(slug)
+  const weapon = await getWeapon(type, slug)
+
+  const name = weapon?.name ?? nameFromSlug(slug, { stripRarity: true })
+  const description = itemDescription({
+    name,
+    description: weapon?.description,
+    qualifiers: [weapon?.rarity, weapon?.category],
+    kind: "weapon",
+  })
 
   return {
-    title: name,
-    description: `Stats, perks, and crafting details for ${name} in Fortnite: Save the World.`,
+    title: itemTitle(name),
+    description,
     openGraph: {
       title: `${name} | FounderBacon`,
-      description: `Build calculator for ${name} - Fortnite: Save the World`,
+      description,
+      type: "article",
     },
     alternates: pageAlternates(locale, `/weapons/${type}/${slug}`),
   }
@@ -36,8 +52,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function WeaponLayout({ children, params }: Props) {
   const { locale: raw, type, slug } = await params
   const locale: Locale = isValidLocale(raw) ? raw : "en"
-  const name = nameFromSlug(slug)
+  const weapon = await getWeapon(type, slug)
+
+  const name = weapon?.name ?? nameFromSlug(slug, { stripRarity: true })
   const url = `/${locale}/weapons/${type}/${slug}`
+  const description = itemDescription({
+    name,
+    description: weapon?.description,
+    qualifiers: [weapon?.rarity, weapon?.category],
+    kind: "weapon",
+  })
 
   return (
     <>
@@ -45,9 +69,15 @@ export default async function WeaponLayout({ children, params }: Props) {
         data={[
           thingPageSchema({
             name,
-            description: `Stats, perks and crafting details for ${name} in Fortnite: Save the World.`,
+            description,
             url,
-            category: type,
+            category: weapon?.category ?? type,
+            ...(weapon?.icon && {
+              image: weaponIconLarge(
+                weapon.icon,
+                type === "melee" ? "weapons-melee" : "weapons-ranged",
+              ),
+            }),
           }),
           breadcrumbSchema([
             { name: "Home", url: `/${locale}` },

@@ -1,29 +1,45 @@
 import type { Metadata } from "next"
 import { JsonLd } from "@/components/common/JsonLd"
+import { fetchTrap } from "@/lib/api/traps"
 import { isValidLocale, type Locale } from "@/lib/i18n"
 import { breadcrumbSchema, thingPageSchema } from "@/lib/jsonld"
-import { pageAlternates } from "@/lib/seo"
+import { itemDescription, itemTitle, nameFromSlug, pageAlternates } from "@/lib/seo"
+import type { TrapDetail } from "@/lib/types/trap"
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>
   children: React.ReactNode
 }
 
-function nameFromSlug(slug: string): string {
-  return slug.replace(/-/g, " ").replace(/\b\w/g, (s) => s.toUpperCase())
+// Fetch dedupe par Next entre generateMetadata et le layout.
+async function getTrap(slug: string): Promise<TrapDetail | null> {
+  try {
+    return await fetchTrap(slug)
+  } catch {
+    return null
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale: raw, slug } = await params
   const locale: Locale = isValidLocale(raw) ? raw : "en"
-  const name = nameFromSlug(slug)
+  const trap = await getTrap(slug)
+
+  const name = trap?.name ?? nameFromSlug(slug, { stripRarity: true })
+  const description = itemDescription({
+    name,
+    description: trap?.description,
+    qualifiers: [trap?.rarity, trap?.placement],
+    kind: "trap",
+  })
 
   return {
-    title: name,
-    description: `Stats, perks, and crafting details for ${name} in Fortnite: Save the World.`,
+    title: itemTitle(name),
+    description,
     openGraph: {
       title: `${name} | FounderBacon`,
-      description: `Build calculator for ${name} - Fortnite: Save the World`,
+      description,
+      type: "article",
     },
     alternates: pageAlternates(locale, `/traps/${slug}`),
   }
@@ -32,8 +48,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TrapLayout({ children, params }: Props) {
   const { locale: raw, slug } = await params
   const locale: Locale = isValidLocale(raw) ? raw : "en"
-  const name = nameFromSlug(slug)
+  const trap = await getTrap(slug)
+
+  const name = trap?.name ?? nameFromSlug(slug, { stripRarity: true })
   const url = `/${locale}/traps/${slug}`
+  const description = itemDescription({
+    name,
+    description: trap?.description,
+    qualifiers: [trap?.rarity, trap?.placement],
+    kind: "trap",
+  })
 
   return (
     <>
@@ -41,7 +65,7 @@ export default async function TrapLayout({ children, params }: Props) {
         data={[
           thingPageSchema({
             name,
-            description: `Stats, perks and crafting details for ${name} in Fortnite: Save the World.`,
+            description,
             url,
             category: "Trap",
           }),

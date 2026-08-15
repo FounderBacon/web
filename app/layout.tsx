@@ -1,7 +1,9 @@
 import "./globals.css"
 import { Poppins } from "next/font/google"
 import localFont from "next/font/local"
+import Script from "next/script"
 import { ThemeProvider, FeatureProvider, RouteGuard } from "@/components/providers"
+import { isProduction } from "@/lib/env"
 import { fetchFeatures } from "@/lib/features"
 
 const poppins = Poppins({
@@ -52,6 +54,12 @@ const akkordeonThirteen = localFont({
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")
 
+// Umami : analytics sans cookies (pas de bandeau RGPD requis).
+// Charge uniquement en production pour ne pas polluer les stats avec
+// le trafic local et les previews.
+const UMAMI_SRC = "https://cloud.umami.is/script.js"
+const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID
+
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const features = await fetchFeatures()
 
@@ -67,6 +75,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <link rel="dns-prefetch" href="https://cdn.founderbacon.com" />
       </head>
       <body className="container m-0 overflow-x-clip bg-background p-0 text-foreground">
+        {isProduction() && UMAMI_WEBSITE_ID && (
+          <Script defer src={UMAMI_SRC} data-website-id={UMAMI_WEBSITE_ID} strategy="afterInteractive" />
+        )}
         <FeatureProvider initial={features}>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
             <RouteGuard>
