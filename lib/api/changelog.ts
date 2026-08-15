@@ -3,6 +3,12 @@ import { api } from "./client"
 
 export type ChangelogCategory = "added" | "changed" | "deprecated" | "removed" | "fixed" | "security"
 
+export interface ChangelogImage {
+  url: string
+  alt: string
+  caption?: string
+}
+
 export interface ChangelogItem {
   title: string
   description: string
@@ -10,6 +16,7 @@ export interface ChangelogItem {
   scope: string
   endpoints: string[]
   tags: string[]
+  images?: ChangelogImage[]
 }
 
 export interface ChangelogEntry {
@@ -24,6 +31,7 @@ export interface ChangelogEntry {
   rarity?: Rarity
   migrationNotes: string | null
   items: ChangelogItem[]
+  images?: ChangelogImage[]
   isPublic: boolean
   tags: string[]
   createdAt: string
