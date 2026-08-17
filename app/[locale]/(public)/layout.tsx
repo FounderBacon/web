@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/ui/footer"
+import { CompareBar } from "@/components/weapons/compare/CompareBar"
 import { getDictionary, isValidLocale } from "@/lib/i18n"
 import { isBeforeLaunch } from "@/lib/landing"
 
@@ -20,6 +21,7 @@ export default async function PublicLayout({ children, params }: Readonly<{ chil
       </a>
       {!beforeLaunch && <Navbar locale={locale} dict={dict} />}
       <main id="main" className="flex-1">{children}</main>
+      {!beforeLaunch && <CompareBar />}
       {!beforeLaunch && <Footer locale={locale} dict={dict} />}
     </div>
   )
