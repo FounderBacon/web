@@ -4,7 +4,7 @@ import Link from "next/link"
 import { GitCompareArrows, X } from "lucide-react"
 import { AssetImage } from "@/components/ui/asset-image"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { weaponIcon, type AssetCategory } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
@@ -103,6 +103,9 @@ export function CompareQuickEdit({ open, onOpenChange, locale }: CompareQuickEdi
           <DialogTitle className="font-burbank text-sm uppercase tracking-wider">
             Comparison ({entries.length}/{MAX_COMPARE})
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Read-only stat comparison of the weapons currently added to the comparator.
+          </DialogDescription>
         </DialogHeader>
 
         {/* En-tetes de colonnes, alignes sur la grille du tableau. Le meme

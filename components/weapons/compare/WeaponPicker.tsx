@@ -6,7 +6,7 @@ import { fetchRangedWeapons, fetchMeleeWeapons } from "@/lib/api/weapons"
 import { weaponIcon } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
 import { AssetImage } from "@/components/ui/asset-image"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { WeaponRef } from "@/lib/compare/useCompareSlot"
 
 interface PickerResult {
@@ -97,6 +97,9 @@ export function WeaponPicker({ open, onOpenChange, onSelect }: WeaponPickerProps
       <DialogContent className="max-w-lg gap-0 p-0">
         <DialogHeader className="border-b border-border/50 px-4 py-3">
           <DialogTitle className="font-burbank text-sm uppercase tracking-wider">Select a weapon</DialogTitle>
+          <DialogDescription className="sr-only">
+            Search for a ranged or melee weapon to add to the comparison.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex items-center gap-2 border-b border-border/50 px-4 py-2">

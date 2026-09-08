@@ -18,6 +18,10 @@ interface CompareCardProps {
   onPick: (ref: WeaponRef) => void
   onClear: () => void
   removable?: boolean
+  // Vrai tant qu'une colonne precedente est vide : le store compacte les
+  // entrees par ordre de remplissage, donc remplir la 3e avant la 2e fait
+  // apparaitre l'arme dans la mauvaise colonne au rechargement de la page.
+  locked?: boolean
 }
 
 /**
@@ -27,7 +31,7 @@ interface CompareCardProps {
  * s'ajoute au comparateur : afficher ici les selecteurs repoussait le tableau
  * de stats hors de l'ecran, alors que c'est le but de la page.
  */
-export function CompareCard({ slot, color, locale, onPick, onClear, removable }: CompareCardProps) {
+export function CompareCard({ slot, color, locale, onPick, onClear, removable, locked }: CompareCardProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const { weapon } = slot
 
@@ -37,11 +41,13 @@ export function CompareCard({ slot, color, locale, onPick, onClear, removable }:
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          disabled={slot.loading}
+          disabled={slot.loading || locked}
           className="flex min-h-28 w-full flex-col items-center justify-center gap-2 border border-dashed border-border/60 p-4 transition-colors hover:border-primary/50 hover:bg-muted/30 disabled:opacity-50"
         >
           {slot.loading ? (
             <div className="size-5 animate-spin rounded-full border-2 border-border border-t-primary" />
+          ) : locked ? (
+            <span className="text-xs text-muted-foreground">Fill the previous slot first</span>
           ) : (
             <>
               <Plus className="size-5 text-muted-foreground" />

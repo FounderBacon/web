@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Check, Plus, Share2, Trash2 } from "lucide-react"
@@ -64,18 +64,33 @@ export default function WeaponComparePage() {
   // Selection de depart figee au montage : l'URL est prioritaire (un lien
   // partage doit s'afficher tel quel), sinon on reprend le store persiste.
   //
-  // Lecture unique et volontaire, via getState() : cette page ecrit dans le
-  // store a chaque changement de colonne. S'abonner a `entries` ferait
-  // reinjecter cette ecriture dans le rendu — c'est ce qui bouclait a l'infini.
-  const initialEntries = useRef<CompareEntry[]>(
-    urlEntries.current.length > 0 ? urlEntries.current : useCompare.getState().entries,
-  )
+  // Le premier rendu (SSR puis hydratation) ne peut se baser que sur l'URL :
+  // le store persist lit le localStorage, invisible cote serveur, donc s'en
+  // servir ici desynchronise le HTML serveur du premier rendu client — React
+  // le detecte comme une erreur d'hydratation et rejoue tout l'arbre. Le
+  // store n'est repris qu'apres coup, dans l'effet ci-dessous.
+  const initialEntries = useRef<CompareEntry[]>(urlEntries.current)
 
   // La selection courante vit en etat local ; le store n'est qu'une destination.
   const [refs, setRefs] = useState<(WeaponRef | null)[]>(() =>
     SLOT_KEYS.map((_, i) => initialEntries.current[i]?.ref ?? null),
   )
   const refsKey = refs.map((r) => (r ? serializeWeaponRef(r) : "")).join("|")
+
+  // Reprise du store persiste, uniquement quand l'URL n'apportait rien.
+  // useLayoutEffect (plutot que useEffect) pour appliquer la selection avant
+  // la premiere peinture du navigateur et eviter un flash "vide".
+  //
+  // Lecture unique et volontaire, via getState() : cette page ecrit dans le
+  // store a chaque changement de colonne. S'abonner a `entries` ferait
+  // reinjecter cette ecriture dans le rendu — c'est ce qui bouclait a l'infini.
+  useLayoutEffect(() => {
+    if (urlEntries.current.length > 0) return
+    const stored = useCompare.getState().entries
+    if (stored.length === 0) return
+    initialEntries.current = stored
+    setRefs(SLOT_KEYS.map((_, i) => stored[i]?.ref ?? null))
+  }, [])
 
   const [copied, setCopied] = useState(false)
 
@@ -297,6 +312,9 @@ export default function WeaponComparePage() {
                     if (i === 2) setThirdVisible(false)
                   }}
                   removable={i === 2}
+                  // Remplir une colonne avant les precedentes desynchronise sa
+                  // position du store (qui compacte par ordre de remplissage).
+                  locked={i > 0 && refs[i - 1] === null}
                 />
               ))}
             </div>
