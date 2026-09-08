@@ -10,6 +10,8 @@ import { track } from "@/lib/api/track";
 import { buildHeroSlot } from "@/lib/loadout/buildSlot";
 import { loadoutToApiPayload } from "@/lib/loadout/selectors";
 import { useLoadout, type LoadoutHeroSlot, type LoadoutTeamPerk } from "@/lib/loadout/store";
+import { useCompare, useIsInCompare, MAX_COMPARE } from "@/lib/compare/store";
+import type { WeaponRef } from "@/lib/compare/useCompareSlot";
 import type { WeaponDetail, TierData, TierEntry, Perk } from "@/lib/types/weapon";
 import type { CalculatedStats } from "@/lib/types/calculate";
 import { isTierSplit } from "@/lib/types/weapon";
@@ -342,6 +344,39 @@ export default function WeaponPage() {
     }
   }
 
+  // Ajout au comparateur : on reporte le build courant (tier, materiau, level,
+  // offensive, perks) pour que la comparaison parte de ce que l'utilisateur voit.
+  const compareRef: WeaponRef = { type: params.type as "ranged" | "melee", slug: params.slug };
+  const addToCompare = useCompare((s) => s.add);
+  const compareCount = useCompare((s) => s.entries.length);
+  const inCompare = useIsInCompare(compareRef);
+
+  function handleCompare() {
+    // Encodage positionnel des perks : l'index = le numero de slot, les vides
+    // restent vides — meme convention que la lecture d'URL du comparateur.
+    const maxSlot = Math.max(-1, ...Object.keys(selectedPerks).map(Number));
+    const perkIds =
+      maxSlot >= 0
+        ? Array.from({ length: maxSlot + 1 }, (_, s) => selectedPerks[s]?.perkId ?? "")
+        : undefined;
+
+    // Le materiau n'a de sens que sur les armes a tiers splittes.
+    const entry = weapon?.tiers[tier];
+    const splitTier = entry ? isTierSplit(entry) : false;
+
+    addToCompare({
+      ref: compareRef,
+      init: {
+        tier,
+        ...(splitTier && { material }),
+        ...(level > 0 && { level }),
+        ...(offensive > 0 && { offensive }),
+        ...(perkIds?.some(Boolean) && { perkIds }),
+      },
+      ...(weapon && { name: weapon.name, icon: weapon.icon, rarity: weapon.rarity }),
+    });
+  }
+
   if (loading) {
     return (
       <SectionContainer className="flex items-center justify-center py-40">
@@ -393,6 +428,10 @@ export default function WeaponPage() {
           onScreenshot={() => setScreenshotOpen(true)}
           sharePath={buildSharePath()}
           shareUrl={buildShareUrl()}
+          onCompare={handleCompare}
+          inCompare={inCompare}
+          compareFull={compareCount >= MAX_COMPARE}
+          compareCount={compareCount}
         />
 
         {tierData && (
