@@ -2,7 +2,7 @@
 
 import { Pencil, Shield } from "lucide-react"
 import { useState } from "react"
-import { ColumnLoadoutSheet } from "./ColumnLoadoutSheet"
+import { LocalLoadoutSheet } from "@/components/loadout/LocalLoadoutSheet"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,7 +87,14 @@ export function HeroBuildPicker({ hero, onChange }: HeroBuildPickerProps) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-    <ColumnLoadoutSheet open={editorOpen} onOpenChange={setEditorOpen} hero={hero} onApply={onChange} />
+    <LocalLoadoutSheet
+      open={editorOpen}
+      onOpenChange={setEditorOpen}
+      hero={hero}
+      onApply={onChange}
+      title={t.heroEditTitle}
+      hint={t.heroEditHint}
+    />
     </>
   )
 }

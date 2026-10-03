@@ -5,18 +5,22 @@ import { useEffect, useState } from "react"
 import { LoadoutSlot } from "@/components/loadout/LoadoutSlot"
 import { TeamPerkPicker } from "@/components/loadout/TeamPerkPicker"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetBody, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { heroFromSlots, type HeroBuild, type HeroSlots } from "@/lib/compare/hero"
 import { useCompareT } from "@/lib/compare/i18n"
 import { useLoadout, type LoadoutTeamPerk } from "@/lib/loadout/store"
 
-interface ColumnLoadoutSheetProps {
+interface LocalLoadoutSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  // Loadout actuel de la colonne, s'il en a un en propre.
+  // Loadout local actuel, s'il y en a un.
   hero: HeroBuild | undefined
+  // `undefined` : revenir au loadout du profil.
   onApply: (hero: HeroBuild | undefined) => void
+  // Titre et explication : une colonne du comparateur ou une fiche d'arme.
+  title: string
+  hint: string
 }
 
 const SUPPORT_SLOTS = 5
@@ -26,17 +30,18 @@ function emptySlots(): HeroSlots {
 }
 
 /**
- * Editeur du loadout de heros d'UNE colonne du comparateur.
+ * Editeur d'un loadout de heros LOCAL : celui d'une colonne du comparateur ou
+ * d'une fiche d'arme.
  *
  * Il travaille sur un etat local et n'ecrit jamais dans le loadout du profil :
  * modifier un build ici ne touche ni les autres colonnes ni ce que l'utilisateur
  * a regle dans son profil. C'est ce qui permet de comparer deux armes sous deux
- * builds de heros differents.
+ * builds de heros differents. Le profil se modifie, lui, dans LoadoutDrawer.
  *
- * Il repart de ce que la colonne porte deja ; a defaut (colonne qui suit le
- * profil, ou loadout recu par lien), d'une copie du profil actuel.
+ * Il repart du loadout local s'il existe ; a defaut (on suit le profil, ou le
+ * loadout vient d'un lien), d'une copie du profil actuel.
  */
-export function ColumnLoadoutSheet({ open, onOpenChange, hero, onApply }: ColumnLoadoutSheetProps) {
+export function LocalLoadoutSheet({ open, onOpenChange, hero, onApply, title, hint }: LocalLoadoutSheetProps) {
   const t = useCompareT()
   const [slots, setSlots] = useState<HeroSlots>(emptySlots)
   const [name, setName] = useState("")
@@ -80,18 +85,18 @@ export function ColumnLoadoutSheet({ open, onOpenChange, hero, onApply }: Column
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Users className="size-4" />
-              {t.heroEditTitle}
+              {title}
             </SheetTitle>
-            <p className="text-xs text-muted-foreground">{t.heroEditHint}</p>
+            <SheetDescription className="text-xs text-muted-foreground">{hint}</SheetDescription>
           </SheetHeader>
 
           <SheetBody className="flex flex-col gap-8">
             <section className="flex flex-col gap-3">
-              <label htmlFor="column-loadout-name" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <label htmlFor="local-loadout-name" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 {t.heroNameLabel}
               </label>
               <input
-                id="column-loadout-name"
+                id="local-loadout-name"
                 value={name}
                 maxLength={60}
                 onChange={(e) => setName(e.target.value)}

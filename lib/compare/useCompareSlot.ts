@@ -32,6 +32,7 @@ export interface CompareSlotInit {
   tier?: string
   material?: "ore" | "crystal"
   level?: number
+  // Offensive propre a la colonne. Absente : elle suit celle du profil.
   offensive?: number
   perkIds?: string[]
   // Loadout de heros propre a la colonne. Absent : elle suit celui de l'utilisateur.
@@ -45,7 +46,10 @@ export interface CompareSlotState {
   tier: string
   material: "ore" | "crystal"
   level: number
+  // Offensive appliquee : la valeur locale, sinon celle du profil.
   offensive: number
+  // Valeur locale brute, absente quand la colonne suit le profil.
+  offensiveOverride: number | undefined
   selectedPerks: Record<number, Perk | null>
   hero: HeroBuild | undefined
   stats: CalculatedStats | null
@@ -54,7 +58,7 @@ export interface CompareSlotState {
   setTier: (tier: string) => void
   setMaterial: (material: "ore" | "crystal") => void
   setLevel: (level: number) => void
-  setOffensive: (offensive: number) => void
+  setOffensive: (offensive: number | undefined) => void
   setHero: (hero: HeroBuild | undefined) => void
   selectPerk: (slot: number, perk: Perk | null) => void
   resetPerks: () => void
@@ -73,6 +77,8 @@ export function useCompareSlot(
   ref: WeaponRef | null,
   heroPayload: LoadoutApiPayload | undefined,
   init?: CompareSlotInit,
+  // Offensive du profil, appliquee aux colonnes qui n'en fixent pas.
+  profileOffensive = 0,
 ): CompareSlotState {
   const [weapon, setWeapon] = useState<WeaponDetail | null>(null)
   const [loading, setLoading] = useState(false)
@@ -80,7 +86,8 @@ export function useCompareSlot(
   const [tier, setTier] = useState(init?.tier ?? "1")
   const [material, setMaterial] = useState<"ore" | "crystal">(init?.material ?? "ore")
   const [level, setLevel] = useState(init?.level ?? 0)
-  const [offensive, setOffensive] = useState(init?.offensive ?? 0)
+  const [offensiveOverride, setOffensive] = useState<number | undefined>(init?.offensive)
+  const offensive = offensiveOverride ?? profileOffensive
   const [selectedPerks, setSelectedPerks] = useState<Record<number, Perk | null>>({})
   const [hero, setHero] = useState<HeroBuild | undefined>(normalizeHero(init?.hero))
   const [stats, setStats] = useState<CalculatedStats | null>(null)
@@ -148,7 +155,7 @@ export function useCompareSlot(
           setHero(normalizeHero(pending.hero))
           if (pending.tier && data.tiers[pending.tier]) setTier(pending.tier)
           if (pending.material) setMaterial(pending.material)
-          if (pending.offensive !== undefined) setOffensive(pending.offensive)
+          setOffensive(pending.offensive)
           if (pending.level !== undefined) {
             // Signale a l'effet "le level suit le tier" de borner cette valeur
             // au lieu de la remplacer par le minimum du tier.
@@ -273,6 +280,7 @@ export function useCompareSlot(
     material,
     level,
     offensive,
+    offensiveOverride,
     selectedPerks,
     hero,
     stats,

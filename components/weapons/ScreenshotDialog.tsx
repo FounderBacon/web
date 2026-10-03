@@ -223,7 +223,7 @@ export function ScreenshotDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="w-fit max-w-[calc(100%-1rem)] gap-0 overflow-hidden bg-king-900 p-3 sm:max-w-[95vw] sm:p-5">
+      <DialogContent aria-describedby={undefined} showCloseButton={false} className="w-fit max-w-[calc(100%-1rem)] gap-0 overflow-hidden bg-king-900 p-3 sm:max-w-[95vw] sm:p-5">
         {/* Header dialog : icone + titre + sous-titre, boutons a droite */}
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">

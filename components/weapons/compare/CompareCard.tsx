@@ -8,6 +8,7 @@ import { weaponIcon } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
 import { WeaponPicker } from "./WeaponPicker"
 import { HeroBuildPicker } from "./HeroBuildPicker"
+import { HeroLoadoutStrip } from "./HeroLoadoutStrip"
 import type { HeroBuild } from "@/lib/compare/hero"
 import { perkSummary } from "@/lib/compare/summary"
 import { fmt, useCompareT } from "@/lib/compare/i18n"
@@ -83,6 +84,8 @@ export function CompareCard({ slot, color, locale, onPick, onClear, onHeroChange
   const build: string[] = [`T${slot.tier}`]
   if (slot.hasSplit) build.push(slot.material)
   if (slot.level > 0) build.push(`Lv${slot.level}`)
+  // Offensive propre a la colonne seulement : sinon elle suit le profil.
+  if (slot.offensiveOverride !== undefined) build.push(`${t.offensiveShort} ${slot.offensiveOverride}`)
   // Les perks sont nommes, pas comptes : c'est souvent la seule difference
   // entre deux colonnes portant la meme arme.
   const perks = Object.values(slot.selectedPerks).filter((p): p is Perk => p !== null)
@@ -164,6 +167,7 @@ export function CompareCard({ slot, color, locale, onPick, onClear, onHeroChange
       </p>
 
       <HeroBuildPicker hero={slot.hero} onChange={onHeroChange} />
+      <HeroLoadoutStrip hero={slot.hero} />
 
       {/* Le reglage du build se fait sur la fiche de l'arme. */}
       <Link
@@ -174,7 +178,7 @@ export function CompareCard({ slot, color, locale, onPick, onClear, onHeroChange
             tier: slot.tier,
             ...(slot.hasSplit && { material: slot.material }),
             ...(slot.level > 0 && { level: slot.level }),
-            ...(slot.offensive > 0 && { offensive: slot.offensive }),
+            ...(slot.offensiveOverride !== undefined && { offensive: slot.offensiveOverride }),
             ...(slot.hero && { hero: slot.hero }),
             perkIds: Object.entries(slot.selectedPerks).reduce<string[]>((acc, [s, perk]) => {
               if (perk) acc[Number(s)] = perk.perkId

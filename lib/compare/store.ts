@@ -69,9 +69,13 @@ export function normalizePerkIds(perkIds: string[] | undefined): string[] {
 export function sameBuild(a: CompareSlotInit, b: CompareSlotInit): boolean {
   return (
     (a.tier ?? "") === (b.tier ?? "") &&
-    (a.material ?? "") === (b.material ?? "") &&
+    // Absent = "ore", le defaut de toutes les surfaces. La page compare l'ecrit
+    // des que l'arme a un tier splitte, la fiche seulement si le tier courant
+    // l'est : sans ce defaut commun, le meme build ne se reconnaissait pas.
+    (a.material ?? "ore") === (b.material ?? "ore") &&
     (a.level ?? 0) === (b.level ?? 0) &&
-    (a.offensive ?? 0) === (b.offensive ?? 0) &&
+    // Absente (suit le profil) et 0 (fixee a zero) sont deux builds differents.
+    a.offensive === b.offensive &&
     // Les perks sont positionnels : l'ordre fait partie de l'identite.
     normalizePerkIds(a.perkIds).join(",") === normalizePerkIds(b.perkIds).join(",") &&
     // Meme arme, meme build, mais sous deux loadouts de heros : deux colonnes.

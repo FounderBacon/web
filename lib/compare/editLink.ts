@@ -24,10 +24,9 @@ export function compareEditHref(locale: string, ref: WeaponRef, init: CompareSlo
   if (init.tier) q.set("t", init.tier)
   if (init.material) q.set("m", init.material)
   if (init.level) q.set("l", String(init.level))
-  // Toujours transmise, meme a 0 : absente, la fiche reprend l'offensive du
-  // loadout sauvegarde et reecrivait la colonne sans que l'utilisateur ait
-  // touche a quoi que ce soit.
-  q.set("o", String(init.offensive ?? 0))
+  // Seulement si la colonne fixe la sienne. Absente, la colonne suit
+  // l'offensive du profil, et la fiche aussi : elle ne la detache donc pas.
+  if (init.offensive !== undefined) q.set("o", String(init.offensive))
   // Les perks sont positionnels : l'index est le numero de slot.
   init.perkIds?.forEach((perkId, slot) => {
     if (perkId) q.set(`p${slot}`, perkId)
@@ -62,7 +61,8 @@ export function readEditInit(params: Record<string, string>): CompareSlotInit {
     ...(params.t && { tier: params.t }),
     ...(material === "ore" || material === "crystal" ? { material } : {}),
     ...(level > 0 && { level }),
-    ...(offensive > 0 && { offensive }),
+    // 0 compris : une offensive fixee a zero reste une valeur propre a la colonne.
+    ...(!Number.isNaN(offensive) && offensive >= 0 && { offensive }),
     ...(perkIds.length > 0 && { perkIds }),
   }
 }

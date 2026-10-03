@@ -10,7 +10,18 @@ beforeEach(() => useCompare.setState({ entries: [] }))
 
 describe("sameBuild", () => {
   it("treats missing fields as their defaults", () => {
-    expect(sameBuild({}, { tier: undefined, level: 0, offensive: 0, perkIds: [] })).toBe(true)
+    expect(sameBuild({}, { tier: undefined, level: 0, perkIds: [] })).toBe(true)
+  })
+
+  it("treats a missing material as ore", () => {
+    expect(sameBuild({ tier: "3" }, { tier: "3", material: "ore" })).toBe(true)
+    expect(sameBuild({ tier: "3" }, { tier: "3", material: "crystal" })).toBe(false)
+  })
+
+  it("tells an offensive that follows the profile from one fixed at zero", () => {
+    // Absente : la colonne suit le profil. 0 : elle est fixee a zero.
+    expect(sameBuild({}, { offensive: 0 })).toBe(false)
+    expect(sameBuild({ offensive: 0 }, { offensive: 0 })).toBe(true)
   })
 
   it("distinguishes tier, material, level and offensive", () => {

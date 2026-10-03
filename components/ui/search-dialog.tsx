@@ -310,7 +310,7 @@ export function SearchDialog({ locale, open, onOpenChange }: SearchDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
+      <DialogContent aria-describedby={undefined}
         // max-w-[calc(100%-2rem)] sur mobile garde 1rem de marge a gauche/droite
         // sinon la popup colle aux bords ; max-w-2xl prend le relais a partir de sm
         className="grid w-full max-w-[calc(100%-2rem)] gap-0 overflow-hidden bg-king-900 p-0 sm:max-w-2xl"

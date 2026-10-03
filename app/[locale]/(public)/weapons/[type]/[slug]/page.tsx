@@ -13,6 +13,8 @@ import { useLoadout, type LoadoutHeroSlot, type LoadoutTeamPerk } from "@/lib/lo
 import { useCompare, useCompareMembership, normalizePerkIds, sameBuild, sameEntry, MAX_COMPARE } from "@/lib/compare/store";
 import { COMPARE_EDIT_PARAM, readEditInit } from "@/lib/compare/editLink";
 import { useCompareUi } from "@/lib/compare/ui";
+import { effectiveHeroPayload, heroFromSlots, type HeroBuild } from "@/lib/compare/hero";
+import { useOffensive } from "@/lib/loadout/useOffensive";
 import type { WeaponRef, CompareSlotInit } from "@/lib/compare/useCompareSlot";
 import type { WeaponDetail, TierData, TierEntry, Perk } from "@/lib/types/weapon";
 import type { CalculatedStats } from "@/lib/types/calculate";
@@ -25,8 +27,14 @@ import { TierSelector } from "@/components/weapons/TierSelector";
 import { StatsColumn } from "@/components/weapons/StatsColumn";
 import { BuildColumn } from "@/components/weapons/BuildColumn";
 import { EffectsColumn } from "@/components/weapons/EffectsColumn";
+import { HeroBonusSection } from "@/components/weapons/HeroBonusSection";
 import { InfoColumn } from "@/components/weapons/InfoColumn";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+// Listes vides stables : un `?? []` en ligne changerait de reference a chaque
+// rendu et relancerait la synchronisation de l'URL en boucle.
+const NO_SUPPORT: (LoadoutHeroSlot | null)[] = [];
+const NO_TEAM_PERKS: LoadoutTeamPerk[] = [];
 
 export default function WeaponPage() {
   const params = useParams<{ locale: string; type: string; slug: string }>();
@@ -44,10 +52,14 @@ export default function WeaponPage() {
     const v = parseInt(initialParamsRef.current.l ?? "", 10);
     return isNaN(v) ? 0 : v;
   });
-  const [offensive, setOffensive] = useState(() => {
-    const v = parseInt(initialParamsRef.current.o ?? "", 10);
-    return isNaN(v) ? 0 : v;
-  });
+  // Offensive du profil par defaut ; `?o=` ou une saisie sur la fiche la rendent locale.
+  const {
+    offensive,
+    isLocal: offensiveLocal,
+    override: offensiveOverride,
+    setOffensive,
+    resetOffensive,
+  } = useOffensive(initialParamsRef.current.o);
   // Si l'URL contient un loadout, on bypass le reset auto du level (sinon le mount le ramene au min du tier)
   const levelFromUrlRef = useRef(!!initialParamsRef.current.l);
   const [copied, setCopied] = useState(false);
@@ -64,26 +76,26 @@ export default function WeaponPage() {
   const calcAbortRef = useRef<AbortController | null>(null);
   const trackCalcRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Loadout (commander + support + team perks + offensive F.O.R.T.) - persistant entre pages
+  // Loadout du profil (commander + support + team perks) - persistant entre pages
   const loadoutCommander = useLoadout((s) => s.commander);
   const loadoutSupport = useLoadout((s) => s.support);
   const loadoutTeamPerks = useLoadout((s) => s.teamPerks);
-  const loadoutOffensive = useLoadout((s) => s.offensive);
-  const heroPayload = loadoutToApiPayload({
-    commander: loadoutCommander,
-    support: loadoutSupport,
-    teamPerks: loadoutTeamPerks,
-  });
 
-  // Hydrate offensive depuis le loadout sauve si pas dans l'URL (au premier rendu apres hydration zustand)
-  const offensiveHydratedRef = useRef(!!initialParamsRef.current.o);
-  useEffect(() => {
-    if (offensiveHydratedRef.current) return;
-    if (loadoutOffensive > 0) {
-      setOffensive(loadoutOffensive);
-      offensiveHydratedRef.current = true;
-    }
-  }, [loadoutOffensive]);
+  // Loadout propre a cette fiche ("cette arme seulement"), qui ne touche jamais
+  // au profil. Il vient d'une colonne du comparateur ouverte via "Edit build",
+  // d'un lien partage, ou d'un reglage fait ici. Absent, la fiche suit le profil.
+  const isEditLink = initialParamsRef.current[COMPARE_EDIT_PARAM] !== undefined;
+  const [localHero, setLocalHero] = useState<HeroBuild | undefined>(() =>
+    isEditLink ? readEditInit(initialParamsRef.current).hero : undefined,
+  );
+  const heroPayload = effectiveHeroPayload(
+    localHero,
+    loadoutToApiPayload({ commander: loadoutCommander, support: loadoutSupport, teamPerks: loadoutTeamPerks }),
+  );
+  // Heros affiches (capture, partage) : ceux du loadout applique.
+  const shownCommander = localHero ? (localHero.slots?.commander ?? null) : loadoutCommander;
+  const shownSupport = localHero ? (localHero.slots?.support ?? NO_SUPPORT) : loadoutSupport;
+  const shownTeamPerks = localHero ? (localHero.slots?.teamPerks ?? NO_TEAM_PERKS) : loadoutTeamPerks;
 
   useEffect(() => {
     async function load() {
@@ -157,11 +169,15 @@ export default function WeaponPage() {
       ]);
 
       if (cancelled) return;
-      useLoadout.setState({
-        commander,
-        support,
-        teamPerks: teamPerks.filter((p): p is LoadoutTeamPerk => p !== null),
-      });
+      // Le loadout d'un lien partage devient celui de la fiche, sans ecraser
+      // le profil du visiteur comme avant.
+      setLocalHero(
+        heroFromSlots(undefined, {
+          commander,
+          support,
+          teamPerks: teamPerks.filter((p): p is LoadoutTeamPerk => p !== null),
+        }),
+      );
     }
 
     hydrate();
@@ -295,8 +311,13 @@ export default function WeaponPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weapon, tier, material, level, offensive, selectedPerks, params.type, params.slug, JSON.stringify(heroPayload)]);
 
-  // Construction des query params (utilisee par sync URL + share)
-  const writeUrlParams = useCallback((url: URL) => {
+  // Construction des query params (utilisee par sync URL + share).
+  //
+  // L'URL de la page ne porte que ce qui est propre a la fiche (offensive et
+  // loadout locaux) : y ecrire les valeurs du profil les figerait au premier
+  // rechargement, et la fiche ne suivrait plus le profil. Un lien partage
+  // porte, lui, tout ce qui est applique, pour montrer les memes chiffres.
+  const writeUrlParams = useCallback((url: URL, forShare = false) => {
     url.search = "";
     url.searchParams.set("t", tier);
     url.searchParams.set("m", material);
@@ -304,15 +325,17 @@ export default function WeaponPage() {
       if (perk) url.searchParams.set(`p${slot}`, perk.perkId);
     }
     if (level > 0) url.searchParams.set("l", String(level));
-    if (offensive > 0) url.searchParams.set("o", String(offensive));
-    if (loadoutCommander) url.searchParams.set("hc", loadoutCommander.heroSlug);
-    loadoutSupport.forEach((s, i) => {
-      if (s) url.searchParams.set(`hs${i + 1}`, s.heroSlug);
-    });
-    if (loadoutTeamPerks.length > 0) {
-      url.searchParams.set("htp", loadoutTeamPerks.map((p) => p.perkId).join(","));
+    if (forShare ? offensive > 0 : offensiveOverride !== undefined) url.searchParams.set("o", String(offensive));
+    if (forShare || localHero) {
+      if (shownCommander) url.searchParams.set("hc", shownCommander.heroSlug);
+      shownSupport.forEach((s, i) => {
+        if (s) url.searchParams.set(`hs${i + 1}`, s.heroSlug);
+      });
+      if (shownTeamPerks.length > 0) {
+        url.searchParams.set("htp", shownTeamPerks.map((p) => p.perkId).join(","));
+      }
     }
-  }, [tier, material, selectedPerks, level, offensive, loadoutCommander, loadoutSupport, loadoutTeamPerks]);
+  }, [tier, material, selectedPerks, level, offensive, offensiveOverride, localHero, shownCommander, shownSupport, shownTeamPerks]);
 
   useEffect(() => {
     if (!weapon) return;
@@ -323,7 +346,7 @@ export default function WeaponPage() {
 
   const buildShareUrl = useCallback(() => {
     const url = new URL(window.location.href);
-    writeUrlParams(url);
+    writeUrlParams(url, true);
     return url.toString();
   }, [writeUrlParams]);
 
@@ -331,7 +354,7 @@ export default function WeaponPage() {
   const buildSharePath = useCallback(() => {
     if (typeof window === "undefined") return "";
     const url = new URL(window.location.href);
-    writeUrlParams(url);
+    writeUrlParams(url, true);
     return url.pathname + url.search;
   }, [writeUrlParams]);
 
@@ -364,15 +387,14 @@ export default function WeaponPage() {
   );
   // Le materiau n'a de sens que sur les armes a tiers splittes.
   const currentTierEntry = weapon?.tiers?.[tier];
-  // Loadout de la colonne editee (voir plus bas) : la fiche ne le reglant pas,
-  // elle le reporte tel quel pour ne pas l'effacer en reecrivant le build.
-  const editedHero = useCompareUi((s) => s.editTarget?.init.hero);
+  // L'offensive et le loadout ne sont reportes que s'ils sont propres a la
+  // fiche : sinon la colonne suit le profil, comme la fiche elle-meme.
   const compareInit: CompareSlotInit = {
-    ...(editedHero && { hero: editedHero }),
+    ...(localHero && { hero: localHero }),
     tier,
     ...(currentTierEntry && isTierSplit(currentTierEntry) && { material }),
     ...(level > 0 && { level }),
-    ...(offensive > 0 && { offensive }),
+    ...(offensiveOverride !== undefined && { offensive: offensiveOverride }),
     ...(comparePerkIds.length > 0 && { perkIds: comparePerkIds }),
   };
 
@@ -381,7 +403,6 @@ export default function WeaponPage() {
   // Arrivee depuis "Edit build" : la fiche edite une colonne du comparateur,
   // retrouvee par son arme et son dernier build connu (voir lib/compare/ui.ts).
   // On met alors cette entree a jour au lieu d'en ajouter une seconde.
-  const isEditLink = initialParamsRef.current[COMPARE_EDIT_PARAM] !== undefined;
   const editTarget = useCompareUi((s) => s.editTarget);
   const editedIndex = useCompare((s) => (editTarget ? s.entries.findIndex((e) => sameEntry(e, editTarget)) : -1));
   // Colonne retiree entre-temps : la fiche retombe en mode ajout.
@@ -484,11 +505,11 @@ export default function WeaponPage() {
               <div className="flex items-start gap-4">
                 <div className="grid min-w-0 flex-1 grid-cols-[3fr_3fr_3fr] items-start gap-4">
                   <div>
-                    <TierSelector weapon={weapon} tier={tier} material={material} hasSplit={hasSplit} level={level} offensive={offensive} onTierChange={setTier} onMaterialChange={setMaterial} onLevelChange={setLevel} onOffensiveChange={setOffensive} />
+                    <TierSelector weapon={weapon} tier={tier} material={material} hasSplit={hasSplit} level={level} offensive={offensive} onTierChange={setTier} onMaterialChange={setMaterial} onLevelChange={setLevel} onOffensiveChange={setOffensive} offensiveLocal={offensiveLocal} onOffensiveReset={resetOffensive} />
                     <StatsColumn baseStats={baseStats} heroStats={heroStats} modifiedStats={modifiedStats} isRanged={isRanged} loading={statsLoading} />
                   </div>
                   <BuildColumn slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
-                  <EffectsColumn tierData={tierData} slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={isRanged} weaponPerk={weaponPerk} weaponPerkLevel={lastSlot?.unlockLevel} />
+                  <EffectsColumn tierData={tierData} slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={isRanged} weaponPerk={weaponPerk} weaponPerkLevel={lastSlot?.unlockLevel} heroBonus={<HeroBonusSection localHero={localHero} onLocalHeroChange={setLocalHero} context={editing ? "column" : "weapon"} />} />
                 </div>
 
                 <div className="mx-6 w-px self-stretch bg-border/50" />
@@ -501,7 +522,7 @@ export default function WeaponPage() {
 
             {/* Mobile */}
             <div className="px-4 py-4 lg:hidden">
-              <TierSelector weapon={weapon} tier={tier} material={material} hasSplit={hasSplit} level={level} offensive={offensive} onTierChange={setTier} onMaterialChange={setMaterial} onLevelChange={setLevel} onOffensiveChange={setOffensive} />
+              <TierSelector weapon={weapon} tier={tier} material={material} hasSplit={hasSplit} level={level} offensive={offensive} onTierChange={setTier} onMaterialChange={setMaterial} onLevelChange={setLevel} onOffensiveChange={setOffensive} offensiveLocal={offensiveLocal} onOffensiveReset={resetOffensive} />
               <Tabs defaultValue="build" className="mt-3">
                 <TabsList variant="line" className="mb-4 w-full">
                   <TabsTrigger value="build">Build</TabsTrigger>
@@ -516,7 +537,7 @@ export default function WeaponPage() {
                   <StatsColumn baseStats={baseStats} modifiedStats={modifiedStats} isRanged={isRanged} loading={statsLoading} />
                 </TabsContent>
                 <TabsContent value="effects">
-                  <EffectsColumn tierData={tierData} slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={isRanged} weaponPerk={weaponPerk} weaponPerkLevel={lastSlot?.unlockLevel} />
+                  <EffectsColumn tierData={tierData} slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={isRanged} weaponPerk={weaponPerk} weaponPerkLevel={lastSlot?.unlockLevel} heroBonus={<HeroBonusSection localHero={localHero} onLocalHeroChange={setLocalHero} context={editing ? "column" : "weapon"} />} />
                 </TabsContent>
                 <TabsContent value="info">
                   <InfoColumn weapon={weapon} tierData={tierData} />
@@ -526,7 +547,7 @@ export default function WeaponPage() {
           </>
         )}
 
-        {weapon && tierData && <ScreenshotDialog open={screenshotOpen} onOpenChange={setScreenshotOpen} weapon={weapon} tierData={tierData} selectedPerks={selectedPerks} slots={weapon.perkSlots.slice(0, -1)} isRanged={isRanged} baseStats={baseStats} heroStats={heroStats} modifiedStats={modifiedStats} commander={loadoutCommander} support={loadoutSupport} teamPerks={loadoutTeamPerks} sharePath={buildSharePath()} />}
+        {weapon && tierData && <ScreenshotDialog open={screenshotOpen} onOpenChange={setScreenshotOpen} weapon={weapon} tierData={tierData} selectedPerks={selectedPerks} slots={weapon.perkSlots.slice(0, -1)} isRanged={isRanged} baseStats={baseStats} heroStats={heroStats} modifiedStats={modifiedStats} commander={shownCommander} support={shownSupport} teamPerks={shownTeamPerks} sharePath={buildSharePath()} />}
       </SectionContainer>
     </TooltipProvider>
   );

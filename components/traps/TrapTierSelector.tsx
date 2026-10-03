@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { OffensiveField } from "@/components/loadout/OffensiveField"
 import type { TrapDetail } from "@/lib/types/trap"
 import type { TierData } from "@/lib/types/shared"
 
@@ -12,6 +13,9 @@ interface TrapTierSelectorProps {
   onTierChange: (tier: string) => void
   onLevelChange: (level: number) => void
   onOffensiveChange: (offensive: number) => void
+  // Vrai quand l'offensive est propre a la fiche ; faux quand elle suit le profil.
+  offensiveLocal: boolean
+  onOffensiveReset: () => void
 }
 
 const SHORT_NAMES: Record<string, string> = {
@@ -36,6 +40,8 @@ export function TrapTierSelector({
   onTierChange,
   onLevelChange,
   onOffensiveChange,
+  offensiveLocal,
+  onOffensiveReset,
 }: TrapTierSelectorProps) {
   const tierKeys = Object.keys(trap.tiers)
   const activeTd: TierData | undefined = trap.tiers[tier]
@@ -43,7 +49,6 @@ export function TrapTierSelector({
   const levelMax = activeTd?.levelRange?.max ?? 50
 
   const [localLevel, setLocalLevel] = useState<string>(String(level))
-  const [localOffensive, setLocalOffensive] = useState<string>(String(offensive))
 
   // Sync quand les props changent (ex: changement de tier)
   if (Number(localLevel) !== level && !document.activeElement?.closest("[data-level-input]")) {
@@ -56,11 +61,6 @@ export function TrapTierSelector({
     onLevelChange(n)
   }
 
-  function commitOffensive(raw: string) {
-    const n = Math.max(0, parseInt(raw, 10) || 0)
-    setLocalOffensive(String(n))
-    onOffensiveChange(n)
-  }
 
   return (
     <div className="mb-4 overflow-hidden border border-border/50">
@@ -120,20 +120,7 @@ export function TrapTierSelector({
               className="w-full border border-border/50 bg-muted/60 px-3 py-1.5 text-center text-xs font-semibold tabular-nums text-foreground outline-none transition-colors focus:border-primary focus:bg-primary/10"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Offensive
-            </label>
-            <input
-              type="number"
-              min={0}
-              value={localOffensive}
-              onChange={(e) => setLocalOffensive(e.target.value)}
-              onBlur={(e) => commitOffensive(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") commitOffensive((e.target as HTMLInputElement).value) }}
-              className="w-full border border-border/50 bg-muted/60 px-3 py-1.5 text-center text-xs font-semibold tabular-nums text-foreground outline-none transition-colors focus:border-primary focus:bg-primary/10"
-            />
-          </div>
+          <OffensiveField value={offensive} isLocal={offensiveLocal} onChange={onOffensiveChange} onReset={onOffensiveReset} />
         </div>
       </div>
     </div>

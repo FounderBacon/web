@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { LoadoutSlot } from "@/components/loadout/LoadoutSlot"
 import { TeamPerkPicker } from "@/components/loadout/TeamPerkPicker"
-import { Sheet, SheetBody, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n"
 import { hasAnyLoadout } from "@/lib/loadout/selectors"
@@ -61,7 +61,7 @@ export function LoadoutDrawer({ open, onOpenChange }: LoadoutDrawerProps) {
             <Users className="size-4" />
             Loadout
           </SheetTitle>
-          <p className="text-xs text-muted-foreground">Saved across pages and sessions.</p>
+          <SheetDescription className="text-xs text-muted-foreground">Saved across pages and sessions.</SheetDescription>
         </SheetHeader>
 
         <SheetBody className="flex flex-col gap-8">

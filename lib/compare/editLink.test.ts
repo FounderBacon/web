@@ -34,9 +34,10 @@ describe("compareEditHref", () => {
     expect(q.get("p2")).toBe("pc")
   })
 
-  it("always carries the offensive, even at zero", () => {
-    // Absente, la fiche reprendrait l'offensive du loadout et modifierait la colonne.
-    expect(query(compareEditHref("en", ref, { tier: "1" })).get("o")).toBe("0")
+  it("carries the offensive only when the column sets its own, zero included", () => {
+    // Sans offensive propre, colonne et fiche suivent toutes deux le profil.
+    expect(query(compareEditHref("en", ref, { tier: "1" })).has("o")).toBe(false)
+    expect(query(compareEditHref("en", ref, { tier: "1", offensive: 0 })).get("o")).toBe("0")
   })
 
   it("encodes the column's hero loadout without colliding with the page's own loadout params", () => {
@@ -63,6 +64,7 @@ describe("readEditInit", () => {
       { tier: "3" },
       { tier: "5", material: "crystal", level: 60, offensive: 12, perkIds: ["pa", "", "pc"] },
       { tier: "2", perkIds: ["", "pb"] },
+      { tier: "2", offensive: 0 },
       { tier: "3", hero: { name: "Wall", commanderPerkId: "cmd", supportPerkIds: ["a", "b"], teamPerkIds: ["t"] } },
     ]
     for (const init of builds) {

@@ -113,13 +113,15 @@ export default function WeaponComparePage() {
   const support = useLoadout((s) => s.support)
   const teamPerks = useLoadout((s) => s.teamPerks)
   const heroPayload = loadoutToApiPayload({ commander, support, teamPerks })
+  // L'offensive du profil s'applique aux colonnes qui n'en fixent pas.
+  const profileOffensive = useLoadout((s) => s.offensive)
 
   // Les init ne sont lus qu'au premier chargement de chaque arme (le hook les
   // fige dans une ref), donc la selection de depart suffit.
-  const slotA = useCompareSlot(refs[0], heroPayload, initialEntries.current[0]?.init)
-  const slotB = useCompareSlot(refs[1], heroPayload, initialEntries.current[1]?.init)
-  const slotC = useCompareSlot(refs[2], heroPayload, initialEntries.current[2]?.init)
-  const slotD = useCompareSlot(refs[3], heroPayload, initialEntries.current[3]?.init)
+  const slotA = useCompareSlot(refs[0], heroPayload, initialEntries.current[0]?.init, profileOffensive)
+  const slotB = useCompareSlot(refs[1], heroPayload, initialEntries.current[1]?.init, profileOffensive)
+  const slotC = useCompareSlot(refs[2], heroPayload, initialEntries.current[2]?.init, profileOffensive)
+  const slotD = useCompareSlot(refs[3], heroPayload, initialEntries.current[3]?.init, profileOffensive)
   const slots = [slotA, slotB, slotC, slotD]
 
   // Deux colonnes par defaut ; les suivantes n'apparaissent qu'a la demande.
@@ -149,7 +151,8 @@ export default function WeaponComparePage() {
             s.tier,
             s.material,
             s.level,
-            s.offensive,
+            // Locale ou suivie : changer de mode change l'URL et le store.
+            s.offensiveOverride ?? "profile",
             Object.entries(s.selectedPerks)
               .filter(([, p]) => p)
               .map(([slot, p]) => `${slot}:${p!.perkId}`)
@@ -177,7 +180,8 @@ export default function WeaponComparePage() {
         url.searchParams.set(`t${key}`, slot.tier)
         if (slot.hasSplit) url.searchParams.set(`m${key}`, slot.material)
         if (slot.level > 0) url.searchParams.set(`l${key}`, String(slot.level))
-        if (slot.offensive > 0) url.searchParams.set(`o${key}`, String(slot.offensive))
+        // Seulement une offensive propre a la colonne : sinon elle suit le profil.
+        if (slot.offensiveOverride !== undefined) url.searchParams.set(`o${key}`, String(slot.offensiveOverride))
 
         // Encodage positionnel des perks : les slots vides restent vides.
         const maxSlot = Math.max(-1, ...Object.keys(slot.selectedPerks).map(Number))
@@ -236,7 +240,7 @@ export default function WeaponComparePage() {
           tier: slot.tier,
           ...(slot.hasSplit && { material: slot.material }),
           ...(slot.level > 0 && { level: slot.level }),
-          ...(slot.offensive > 0 && { offensive: slot.offensive }),
+          ...(slot.offensiveOverride !== undefined && { offensive: slot.offensiveOverride }),
           ...(perkIds?.some(Boolean) && { perkIds }),
           ...(slot.hero && { hero: slot.hero }),
         },

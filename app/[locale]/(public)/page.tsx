@@ -87,7 +87,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </Suspense>
       </div>
       <div className="relative hidden w-full overflow-hidden md:block md:h-[900px]">
-        <Image src="/image/bg_home.png" alt="" fill priority sizes="100vw" className="object-cover blur-sm" />
+        <Image src="/image/bg_home.png" alt="" fill priority sizes="(min-width: 768px) 100vw, 1px" className="object-cover blur-sm" />
         <div className="absolute inset-0 bg-king-800/10" />
         <div className="relative md:absolute md:inset-0">
           <div className="grid grid-cols-1 gap-8 px-5 py-8 sm:px-8 md:h-full md:grid-cols-2 md:gap-6 md:px-12 md:py-12 lg:gap-8 lg:px-24 lg:py-14 xl:px-48 xl:py-16">

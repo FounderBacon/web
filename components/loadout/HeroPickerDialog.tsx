@@ -133,7 +133,7 @@ export function HeroPickerDialog({ open, onOpenChange, slotKind, onSelect }: Her
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="grid w-full max-w-2xl gap-0 overflow-hidden bg-king-900 p-0 sm:max-w-2xl" showCloseButton={false}>
+      <DialogContent aria-describedby={undefined} className="grid w-full max-w-2xl gap-0 overflow-hidden bg-king-900 p-0 sm:max-w-2xl" showCloseButton={false}>
         <DialogTitle className="sr-only">Pick a hero</DialogTitle>
 
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">

@@ -26,6 +26,8 @@ export function useCompareEntries(
   entries: CompareEntry[],
   heroPayload: LoadoutApiPayload | undefined,
   enabled = true,
+  // Offensive du profil, appliquee aux entrees qui n'en fixent pas.
+  profileOffensive = 0,
 ): { resolved: ResolvedEntry[]; loading: boolean } {
   const [resolved, setResolved] = useState<ResolvedEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -74,7 +76,7 @@ export function useCompareEntries(
             tier,
             material,
             level,
-            offensive: init.offensive ?? 0,
+            offensive: init.offensive ?? profileOffensive,
             perkIds: init.perkIds?.filter(Boolean) ?? [],
           }
           // Le loadout de la colonne, sinon celui de l'utilisateur. Avec un
@@ -102,7 +104,7 @@ export function useCompareEntries(
     return () => controller.abort()
     // key/heroKey serialisent les entrees : evite un refetch a chaque rendu.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, heroKey, enabled])
+  }, [key, heroKey, enabled, profileOffensive])
 
   return { resolved, loading }
 }

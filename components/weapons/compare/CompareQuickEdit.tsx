@@ -17,6 +17,7 @@ import { useCompareEntries, type ResolvedEntry } from "@/lib/compare/useCompareE
 import { useLoadout } from "@/lib/loadout/store"
 import { loadoutToApiPayload } from "@/lib/loadout/selectors"
 import { CompareStatsTable } from "./CompareStatsTable"
+import { HeroLoadoutStrip } from "./HeroLoadoutStrip"
 
 interface CompareQuickEditProps {
   open: boolean
@@ -64,6 +65,8 @@ function ColumnHeader({
   if (entry.init.tier) build.push(`T${entry.init.tier}`)
   if (entry.init.material) build.push(entry.init.material)
   if (entry.init.level) build.push(`Lv${entry.init.level}`)
+  // Offensive propre a la colonne seulement : sans elle, la colonne suit le profil.
+  if (entry.init.offensive !== undefined) build.push(`${t.offensiveShort} ${entry.init.offensive}`)
   // Les perks sont nommes, pas comptes : c'est souvent la seule difference
   // entre deux colonnes portant la meme arme. L'entree stockee ne garde que
   // leurs identifiants, l'arme chargee fournit les libelles.
@@ -127,13 +130,15 @@ function ColumnHeader({
         {build.length > 0 ? build.join(" / ") : t.defaultBuild}
       </p>
 
-      {/* Loadout de heros de la colonne, quand elle en fixe un. */}
+      {/* Loadout de heros applique : son nom quand la colonne en fixe un, et
+          toujours les heros, ceux du profil a defaut. */}
       {entry.init.hero && (
         <p className="flex w-full items-center justify-center gap-1 truncate text-[10px] text-muted-foreground md:text-[11px]">
           <Shield className="size-3 shrink-0" aria-hidden />
           <span className="truncate">{entry.init.hero.name ?? t.heroCustom}</span>
         </p>
       )}
+      <HeroLoadoutStrip hero={entry.init.hero} />
 
       {/* La modal est en lecture seule : le reglage du build se fait sur la
           fiche de l'arme, qui n'etait accessible depuis nulle part ici. */}
@@ -190,15 +195,19 @@ export function CompareQuickEdit({ open, onOpenChange, locale }: CompareQuickEdi
   const support = useLoadout((s) => s.support)
   const teamPerks = useLoadout((s) => s.teamPerks)
   const heroPayload = loadoutToApiPayload({ commander, support, teamPerks })
+  const profileOffensive = useLoadout((s) => s.offensive)
 
   // Les appels ne partent qu'a l'ouverture : la modal est montee en permanence.
-  const { resolved, loading } = useCompareEntries(entries, heroPayload, open)
+  const { resolved, loading } = useCompareEntries(entries, heroPayload, open, profileOffensive)
 
   const columns = resolved.map((r) => r.stats)
   const names = resolved.map((r) => r.weapon?.name ?? r.entry.name ?? null)
   const hasStats = columns.some((c) => c !== null)
 
   return (
+    // Infobulles des en-tetes (heros) comme du tableau : un seul provider,
+    // le contexte traverse le portail du dialogue.
+    <TooltipProvider delayDuration={200}>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[85vh] w-full max-w-3xl flex-col gap-0 overflow-hidden bg-background p-0 sm:max-w-3xl">
         <DialogHeader className="shrink-0 gap-0.5 border-b border-border/50 bg-card px-4 py-3 pr-12">
@@ -264,12 +273,12 @@ export function CompareQuickEdit({ open, onOpenChange, locale }: CompareQuickEdi
                 hint={t.oneMoreHint}
               />
             ) : (
-              <TooltipProvider delayDuration={200}>
+              <>
                 {/* Sans cadre ni marge : le tableau est le contenu de la modal,
                     l'encadrer dedans faisait une boite dans une boite et
                     rognait la largeur utile des colonnes. */}
                 <CompareStatsTable columns={columns} names={names} colors={SERIES_COLORS} bordered={false} />
-              </TooltipProvider>
+              </>
             )}
           </div>
         </div>
@@ -287,5 +296,6 @@ export function CompareQuickEdit({ open, onOpenChange, locale }: CompareQuickEdi
         </div>
       </DialogContent>
     </Dialog>
+    </TooltipProvider>
   )
 }

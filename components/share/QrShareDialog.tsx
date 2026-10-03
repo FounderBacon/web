@@ -147,7 +147,7 @@ export function QrShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[calc(100%-2rem)] gap-4 bg-king-900 p-4 sm:max-w-md sm:p-5">
+      <DialogContent aria-describedby={undefined} className="w-full max-w-[calc(100%-2rem)] gap-4 bg-king-900 p-4 sm:max-w-md sm:p-5">
         <div className="flex flex-col gap-1">
           <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
           {description && <p className="text-xs text-muted-foreground">{description}</p>}

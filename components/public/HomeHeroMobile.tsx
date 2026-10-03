@@ -28,7 +28,9 @@ export function HomeHeroMobile({ locale, dict, venture, ventureName }: HomeHeroM
 
   return (
     <section className="relative overflow-hidden md:hidden">
-      <Image src="/image/bg_home.png" alt="" fill priority sizes="100vw" className="object-cover" />
+      {/* Pleine largeur sous md, masquee au-dela : `sizes` le dit au
+          navigateur, qui sinon telechargeait une image plein ecran inutile. */}
+      <Image src="/image/bg_home.png" alt="" fill priority sizes="(max-width: 767px) 100vw, 1px" className="object-cover" />
       {/* Voile sombre plutot que le flou du desktop : a cette taille le
           decor flou ne se lisait plus que comme une tache. */}
       <div className="absolute inset-0 bg-king-980/60" />

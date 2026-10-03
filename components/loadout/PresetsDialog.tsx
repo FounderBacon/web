@@ -72,7 +72,7 @@ export function PresetsDialog({ open, onOpenChange, current, hasCurrent, onLoad 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg gap-4 bg-king-900 p-5">
+      <DialogContent aria-describedby={undefined} className="max-w-lg gap-4 bg-king-900 p-5">
         <div className="flex flex-col gap-1">
           <DialogTitle className="text-base font-semibold">Loadout presets</DialogTitle>
           <p className="text-xs text-muted-foreground">
