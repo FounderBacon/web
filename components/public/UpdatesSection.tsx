@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { SocialLink } from "@/components/public/SocialLink";
 import { DecoFrame } from "@/components/svg/DecoFrame";
 import { entrySlug, fetchChangelog, type ChangelogCategory, type ChangelogEntry } from "@/lib/api/changelog";
@@ -32,7 +33,17 @@ function categoryCounts(entry: ChangelogEntry): Array<{ category: ChangelogCateg
   return Array.from(counts, ([category, count]) => ({ category, count }));
 }
 
-export async function UpdatesSection({ locale }: { locale: Locale }) {
+interface UpdatesSectionProps {
+  locale: Locale;
+  // Titres de la version mobile compacte.
+  labels: { whatsNew: string; changelog: string };
+}
+
+// Nombre d'entrees de la version mobile : au-dela, la liste reprend la place
+// que la refonte cherchait justement a rendre.
+const MOBILE_ENTRIES = 3;
+
+export async function UpdatesSection({ locale, labels }: UpdatesSectionProps) {
   let entries: ChangelogEntry[] = [];
   let failed = false;
   try {
@@ -55,7 +66,35 @@ export async function UpdatesSection({ locale }: { locale: Locale }) {
   const latest = entries[0];
 
   return (
-    <section className="px-5 py-12 sm:px-8 md:px-12 md:py-20 lg:px-24 lg:py-24 xl:px-48">
+    <>
+    {/* Mobile : une ligne par version. Les cartes completes faisaient chacune
+        un ecran, pour une information qu'on survole. */}
+    <section className="px-4 pt-8 pb-12 md:hidden">
+      <div className="mb-2 flex items-baseline justify-between">
+        <h2 className="font-burbank text-[26px] uppercase leading-none text-primary-foreground">{labels.whatsNew}</h2>
+        <Link href={`/${locale}/changelog`} className="text-[13px] text-primary transition-colors hover:text-primary/80">
+          {labels.changelog}
+        </Link>
+      </div>
+      <ul>
+        {entries.slice(0, MOBILE_ENTRIES).map((entry) => (
+          <li key={entry._id} className="border-b border-foreground/10 last:border-b-0">
+            <Link href={`/${locale}/changelog/${entrySlug(entry)}`} className="flex min-h-14 items-center gap-3 py-2">
+              <span className={`w-14 shrink-0 font-burbank text-lg uppercase ${(entry.rarity && RARITY_DECO[entry.rarity]) ?? "text-primary"}`}>
+                v{entry.version}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-semibold text-foreground">{entry.title}</span>
+                <span className="text-[11px] text-muted-foreground">{formatDate(entry.releaseDate, locale)}</span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section className="hidden px-5 py-12 sm:px-8 md:block md:px-12 md:py-20 lg:px-24 lg:py-24 xl:px-48">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-4 md:gap-8 lg:gap-12">
         {/* Colonne gauche : liste des changelogs (3/4).
             order-2 en mobile : l'aside "Last update" passe avant la liste,
@@ -112,5 +151,6 @@ export async function UpdatesSection({ locale }: { locale: Locale }) {
         </aside>
       </div>
     </section>
+    </>
   );
 }

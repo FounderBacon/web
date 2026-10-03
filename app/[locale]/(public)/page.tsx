@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
 import { JsonLd } from "@/components/common/JsonLd";
+import { HomeHeroMobile } from "@/components/public/HomeHeroMobile";
 import { LandingPage } from "@/components/public/LandingPage";
 import { TrendingWeekly } from "@/components/public/TrendingWeekly";
 import { UpdatesSection } from "@/components/public/UpdatesSection";
@@ -71,7 +72,21 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     <>
       <JsonLd data={[websiteSchema(locale as Locale), softwareAppSchema(locale as Locale)]} />
       <h1 className="sr-only">{TITLE_BY_LOCALE[locale] ?? TITLE_BY_LOCALE.en}</h1>
-      <div className="relative w-full overflow-hidden md:h-[900px]">
+      {/* Mobile : heros venture puis tendances en defilement. Le bloc
+          ci-dessous (heros a deux colonnes) n'apparait qu'a partir de md. */}
+      <HomeHeroMobile locale={locale as Locale} dict={dict.home} venture={venture} ventureName={ventureName} />
+      <div className="md:hidden">
+        <Suspense fallback={<SkeletonTrendingList />}>
+          <TrendingWeekly
+            locale={locale as Locale}
+            variant="mobile"
+            title={dict.home.trendingWeekly}
+            ctaLabel={dict.home.seeAll}
+            ctaHref={`/${locale}/search`}
+          />
+        </Suspense>
+      </div>
+      <div className="relative hidden w-full overflow-hidden md:block md:h-[900px]">
         <Image src="/image/bg_home.png" alt="" fill priority sizes="100vw" className="object-cover blur-sm" />
         <div className="absolute inset-0 bg-king-800/10" />
         <div className="relative md:absolute md:inset-0">
@@ -88,14 +103,24 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               <p className="text-balance font-burbank text-4xl uppercase leading-[0.95] text-primary-foreground sm:text-5xl md:text-5xl lg:text-6xl xl:text-7xl">{ventureName ?? dict.home.seasonTitle}</p>
             </div>
 
-            <div className="order-2 flex flex-col md:order-0 md:col-start-2 md:row-span-2 md:row-start-1 md:h-full md:justify-center">
-              {venture && <VentureDetails venture={venture} />}
+            <div className="order-2 flex flex-col md:order-0 md:col-start-2 md:row-span-2 md:row-start-1 md:h-full md:items-center md:justify-center">
+              {venture && (
+                <VentureDetails
+                  venture={venture}
+                  countdownLabels={{
+                    rotatesIn: dict.home.ventureRotatesIn,
+                    rotatingNow: dict.home.rotatingNow,
+                    questlineEndsIn: dict.home.questlineEndsIn,
+                    units: dict.home.countdownUnits,
+                  }}
+                />
+              )}
             </div>
 
             <div className="order-3 md:order-0 md:col-start-1 md:row-start-2 md:self-start">
               <h2 className="mb-4 font-burbank text-2xl uppercase leading-none text-primary-foreground md:mb-5 md:text-3xl">{dict.home.trendingWeekly}</h2>
               <Suspense fallback={<SkeletonTrendingList />}>
-                <TrendingWeekly locale={locale as Locale} ctaLabel={dict.home.browseAll} ctaHref={`/${locale}/search`} />
+                <TrendingWeekly locale={locale as Locale} variant="desktop" ctaLabel={dict.home.browseAll} ctaHref={`/${locale}/search`} />
               </Suspense>
             </div>
           </div>
@@ -107,7 +132,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </p>
       </div>
       <Suspense fallback={<SkeletonUpdatesSection />}>
-        <UpdatesSection locale={locale as Locale} />
+        <UpdatesSection locale={locale as Locale} labels={{ whatsNew: dict.home.whatsNew, changelog: dict.home.changelogLink }} />
       </Suspense>
     </>
   );
