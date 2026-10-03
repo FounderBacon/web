@@ -290,9 +290,19 @@
     "heroCustom": "Loadout personnalisé",
     "heroPickerTitle": "Loadout de héros de cette colonne",
     "heroPickerAria": "Loadout de héros : {name}. Modifier",
-    "heroNoPresets": "Enregistre un loadout comme preset sur la page loadout de héros pour le choisir ici.",
     "heroSection": "Bonus héros",
     "weaponTypeRanged": "Distance",
-    "weaponTypeMelee": "Mêlée"
+    "weaponTypeMelee": "Mêlée",
+    "heroEdit": "Modifier le loadout de cette colonne…",
+    "heroEditTitle": "Loadout de la colonne",
+    "heroEditHint": "S'applique à cette colonne uniquement. Le loadout de ton profil n'est pas modifié.",
+    "heroNameLabel": "Nom",
+    "heroCommander": "Commandant",
+    "heroSupport": "Équipe de soutien",
+    "heroSupportN": "Soutien",
+    "heroTeamPerks": "Perks d'équipe",
+    "heroApply": "Appliquer à cette colonne",
+    "heroClear": "Tout vider",
+    "heroFollowProfile": "Suivre le loadout de mon profil"
   }
 }

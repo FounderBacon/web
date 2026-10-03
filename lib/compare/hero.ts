@@ -1,4 +1,5 @@
 import type { LoadoutPresetSnapshot } from "@/lib/loadout/presets"
+import type { LoadoutHeroSlot, LoadoutTeamPerk } from "@/lib/loadout/store"
 import { loadoutToApiPayload, type LoadoutApiPayload } from "@/lib/loadout/selectors"
 import type { CalculatedStats } from "@/lib/types/calculate"
 
@@ -20,6 +21,16 @@ export interface HeroBuild {
   commanderPerkId?: string
   supportPerkIds: string[]
   teamPerkIds: string[]
+  // Heros choisis (noms, icones, perks) : de quoi rouvrir l'editeur de la
+  // colonne. Absent d'un lien partage, qui ne transporte que les identifiants
+  // de perks ; l'editeur repart alors du loadout courant.
+  slots?: HeroSlots
+}
+
+export interface HeroSlots {
+  commander: LoadoutHeroSlot | null
+  support: (LoadoutHeroSlot | null)[]
+  teamPerks: LoadoutTeamPerk[]
 }
 
 function sortedIds(ids: string[]): string[] {
@@ -34,6 +45,7 @@ export function normalizeHero(hero: HeroBuild | undefined): HeroBuild | undefine
     ...(hero.commanderPerkId && { commanderPerkId: hero.commanderPerkId }),
     supportPerkIds: sortedIds(hero.supportPerkIds),
     teamPerkIds: sortedIds(hero.teamPerkIds),
+    ...(hero.slots && { slots: hero.slots }),
   }
   const empty = !normalized.commanderPerkId && normalized.supportPerkIds.length === 0 && normalized.teamPerkIds.length === 0
   return empty ? undefined : normalized
@@ -68,11 +80,20 @@ export function effectiveHeroPayload(
   return own ? heroToPayload(own) : fallback
 }
 
-/** Loadout fige a partir d'un preset enregistre. Null si le preset est vide. */
-export function heroFromPreset(name: string, snapshot: LoadoutPresetSnapshot): HeroBuild | undefined {
-  const payload = loadoutToApiPayload(snapshot)
+/** Loadout fige a partir de heros choisis. Undefined si rien n'est selectionne. */
+export function heroFromSlots(name: string | undefined, slots: HeroSlots): HeroBuild | undefined {
+  const payload = loadoutToApiPayload(slots)
   if (!payload) return undefined
-  return normalizeHero({ name, ...payload })
+  return normalizeHero({ ...(name && { name }), ...payload, slots })
+}
+
+/** Loadout fige a partir d'un preset enregistre. Undefined si le preset est vide. */
+export function heroFromPreset(name: string, snapshot: LoadoutPresetSnapshot): HeroBuild | undefined {
+  return heroFromSlots(name, {
+    commander: snapshot.commander,
+    support: snapshot.support,
+    teamPerks: snapshot.teamPerks,
+  })
 }
 
 // ── URL ──────────────────────────────────────────────────────────

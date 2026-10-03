@@ -1,9 +1,12 @@
 "use client"
 
-import { Shield } from "lucide-react"
+import { Pencil, Shield } from "lucide-react"
+import { useState } from "react"
+import { ColumnLoadoutSheet } from "./ColumnLoadoutSheet"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -31,6 +34,7 @@ const CURRENT = "__current__"
 export function HeroBuildPicker({ hero, onChange }: HeroBuildPickerProps) {
   const t = useCompareT()
   const presets = usePresets((s) => s.presets)
+  const [editorOpen, setEditorOpen] = useState(false)
 
   const choices = presets.flatMap((preset) => {
     const build = heroFromPreset(preset.name, preset.snapshot)
@@ -42,6 +46,7 @@ export function HeroBuildPicker({ hero, onChange }: HeroBuildPickerProps) {
   const label = hero ? (hero.name ?? t.heroCustom) : t.heroCurrent
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
@@ -73,8 +78,16 @@ export function HeroBuildPicker({ hero, onChange }: HeroBuildPickerProps) {
           ))}
           {selected === "__custom__" && <DropdownMenuRadioItem value="__custom__">{t.heroCustom}</DropdownMenuRadioItem>}
         </DropdownMenuRadioGroup>
-        {choices.length === 0 && <p className="px-2 py-1.5 text-[11px] text-muted-foreground">{t.heroNoPresets}</p>}
+        <DropdownMenuSeparator />
+        {/* Un loadout propre a la colonne, sans passer par un preset ni toucher
+            au profil. */}
+        <DropdownMenuItem onSelect={() => setEditorOpen(true)}>
+          <Pencil className="size-3.5" aria-hidden />
+          {t.heroEdit}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    <ColumnLoadoutSheet open={editorOpen} onOpenChange={setEditorOpen} hero={hero} onApply={onChange} />
+    </>
   )
 }

@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest"
 import type { CalculatedStats } from "@/lib/types/calculate"
-import { effectiveHeroPayload, heroFromParams, heroToParams, normalizeHero, sameHero, withHeroGain } from "./hero"
+import {
+  effectiveHeroPayload,
+  heroFromParams,
+  heroFromSlots,
+  heroToParams,
+  normalizeHero,
+  sameHero,
+  withHeroGain,
+} from "./hero"
 
 describe("normalizeHero / sameHero", () => {
   it("treats an empty loadout as no loadout", () => {
@@ -74,5 +82,28 @@ describe("withHeroGain", () => {
     const s = stats(100)
     expect(withHeroGain(s, null)).toBe(s)
     expect(withHeroGain(null, s)).toBeNull()
+  })
+})
+
+describe("heroFromSlots", () => {
+  const slot = (perkId: string) =>
+    ({ heroSlug: perkId, heroName: perkId, heroIconUrl: "", heroClass: "soldier", rarity: "legendary", perkId, perkName: perkId, perkIcon: "", perkDescription: "" }) as never
+
+  it("derives the API loadout from the chosen heroes and keeps them for the editor", () => {
+    const hero = heroFromSlots("Wall", { commander: slot("c"), support: [slot("s1"), null, slot("s2"), null, null], teamPerks: [] })
+    expect(hero?.commanderPerkId).toBe("c")
+    expect(hero?.supportPerkIds).toEqual(["s1", "s2"])
+    expect(hero?.slots?.support).toHaveLength(5)
+    expect(hero?.name).toBe("Wall")
+  })
+
+  it("returns nothing for an empty selection", () => {
+    expect(heroFromSlots("Empty", { commander: null, support: [null, null, null, null, null], teamPerks: [] })).toBeUndefined()
+  })
+
+  it("does not let the stored heroes affect a loadout's identity", () => {
+    const a = heroFromSlots("A", { commander: slot("c"), support: [null, null, null, null, null], teamPerks: [] })
+    const b = { commanderPerkId: "c", supportPerkIds: [], teamPerkIds: [] }
+    expect(sameHero(a, b)).toBe(true)
   })
 })

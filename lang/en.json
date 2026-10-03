@@ -290,9 +290,19 @@
     "heroCustom": "Custom loadout",
     "heroPickerTitle": "Hero loadout for this column",
     "heroPickerAria": "Hero loadout: {name}. Change",
-    "heroNoPresets": "Save a loadout as a preset on the hero loadout page to pick it here.",
     "heroSection": "Hero bonus",
     "weaponTypeRanged": "Ranged",
-    "weaponTypeMelee": "Melee"
+    "weaponTypeMelee": "Melee",
+    "heroEdit": "Edit this column's loadout…",
+    "heroEditTitle": "Column loadout",
+    "heroEditHint": "Applies to this column only. Your profile loadout is not changed.",
+    "heroNameLabel": "Name",
+    "heroCommander": "Commander",
+    "heroSupport": "Support team",
+    "heroSupportN": "Support",
+    "heroTeamPerks": "Team perks",
+    "heroApply": "Apply to this column",
+    "heroClear": "Clear all",
+    "heroFollowProfile": "Follow my profile loadout"
   }
 }
