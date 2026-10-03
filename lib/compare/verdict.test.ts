@@ -51,3 +51,18 @@ describe("buildVerdict", () => {
     expect(columns[1].leads).toEqual(["C"])
   })
 })
+
+describe("buildVerdict — unscored groups", () => {
+  it("shows hero-bonus rows without counting them toward the verdict", () => {
+    const groups: CompareGroupResult[] = [
+      { label: "Damage", rows: [row("damage", [10, 5])] },
+      // La colonne 1 gagne ce groupe, mais il est deja inclus dans les DPS.
+      { label: "Hero bonus", scored: false, rows: [row("heroDpsGain", [0, 90])] },
+    ]
+    const { columns, leaderByGroup, decidedGroups } = buildVerdict(groups, 2)
+    expect(leaderByGroup).toEqual({ Damage: 0 })
+    expect(decidedGroups).toBe(1)
+    expect(columns[0].leads).toEqual(["Damage"])
+    expect(columns[1].leads).toEqual([])
+  })
+})

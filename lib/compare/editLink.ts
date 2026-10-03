@@ -1,8 +1,14 @@
+import { heroFromParams, heroToParams } from "./hero"
 import { normalizePerkIds } from "./store"
 import type { CompareSlotInit, WeaponRef } from "./useCompareSlot"
 
 // Present dans l'URL quand la fiche d'arme edite une colonne du comparateur.
 export const COMPARE_EDIT_PARAM = "cmp"
+
+// Suffixe des parametres du loadout de la colonne. La fiche d'arme lit deja
+// `hc`, `hs1..5` et `htp` pour son propre loadout (slugs de heros) : sans
+// suffixe, des identifiants de perks y seraient pris pour des heros.
+const HERO_KEY = "x"
 
 /**
  * Lien "Edit build" d'une colonne : la fiche de l'arme, pre-reglee sur le build
@@ -26,6 +32,9 @@ export function compareEditHref(locale: string, ref: WeaponRef, init: CompareSlo
   init.perkIds?.forEach((perkId, slot) => {
     if (perkId) q.set(`p${slot}`, perkId)
   })
+  // Loadout de heros de la colonne : sans lui, la fiche retrouverait la
+  // colonne par un build sans heros et ne la reconnaitrait pas.
+  for (const [name, value] of Object.entries(heroToParams(init.hero, HERO_KEY))) q.set(name, value)
   q.set(COMPARE_EDIT_PARAM, "1")
   return `/${locale}/weapons/${ref.type}/${ref.slug}?${q.toString()}`
 }
@@ -46,7 +55,10 @@ export function readEditInit(params: Record<string, string>): CompareSlotInit {
       : [],
   )
 
+  const hero = heroFromParams((name) => params[name], HERO_KEY)
+
   return {
+    ...(hero && { hero }),
     ...(params.t && { tier: params.t }),
     ...(material === "ore" || material === "crystal" ? { material } : {}),
     ...(level > 0 && { level }),

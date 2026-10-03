@@ -278,7 +278,10 @@ export function CompareStatsTable({ columns, names, colors, bordered = true }: C
         />
       )}
 
-      <Accordion type="multiple" defaultValue={groups.map((g) => g.label)}>
+      {/* La cle suit la liste des groupes : "Hero bonus" apparait quand une colonne
+          recoit un loadout, et un accordeon non controle n'ouvre que les groupes
+          connus a son montage — le nouveau groupe restait replie. */}
+      <Accordion key={groups.map((g) => g.label).join("|")} type="multiple" defaultValue={groups.map((g) => g.label)}>
         {groups.map((group) => (
           <AccordionItem key={group.label} value={group.label} className="border-b border-border/50 last:border-b-0">
             {/* Le leader sur l'en-tete du groupe : en scrollant, l'en-tete de

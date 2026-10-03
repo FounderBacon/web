@@ -20,6 +20,7 @@ import {
 import { useCompare, MAX_COMPARE, SERIES_COLORS, type CompareEntry } from "@/lib/compare/store"
 import { compareGridVars, CMP_ROW, CMP_VALUES, CMP_STICKY_TOP } from "@/lib/compare/grid"
 import { useCompareT } from "@/lib/compare/i18n"
+import { heroFromParams, heroToParams } from "@/lib/compare/hero"
 import { useLoadout } from "@/lib/loadout/store"
 import { loadoutToApiPayload } from "@/lib/loadout/selectors"
 
@@ -38,6 +39,8 @@ function readInit(params: URLSearchParams, key: SlotKey): CompareSlotInit {
   const offensive = parseInt(params.get(`o${key}`) ?? "", 10)
   const material = params.get(`m${key}`)
   const perks = params.get(`p${key}`)
+  // Loadout de heros propre a la colonne ; absent, elle suit celui de l'utilisateur.
+  const hero = heroFromParams((name) => params.get(name), key)
 
   return {
     ...(params.get(`t${key}`) && { tier: params.get(`t${key}`)! }),
@@ -46,6 +49,7 @@ function readInit(params: URLSearchParams, key: SlotKey): CompareSlotInit {
     ...(!isNaN(offensive) && { offensive }),
     // Les perks sont positionnels : l'index dans la liste = le numero de slot.
     ...(perks && { perkIds: perks.split(",") }),
+    ...(hero && { hero }),
   }
 }
 
@@ -151,6 +155,9 @@ export default function WeaponComparePage() {
               .map(([slot, p]) => `${slot}:${p!.perkId}`)
               .sort()
               .join(","),
+            // Le loadout fait partie de l'empreinte : le changer doit
+            // reecrire l'URL et le store comme n'importe quel autre reglage.
+            JSON.stringify(s.hero ?? null),
           ].join("-")
         : "",
     )
@@ -178,6 +185,8 @@ export default function WeaponComparePage() {
           const encoded = Array.from({ length: maxSlot + 1 }, (_, s) => slot.selectedPerks[s]?.perkId ?? "")
           if (encoded.some(Boolean)) url.searchParams.set(`p${key}`, encoded.join(","))
         }
+
+        for (const [name, value] of Object.entries(heroToParams(slot.hero, key))) url.searchParams.set(name, value)
       })
     },
     // Les slots sont recrees a chaque rendu : on depend d'une cle serialisee de
@@ -229,6 +238,7 @@ export default function WeaponComparePage() {
           ...(slot.level > 0 && { level: slot.level }),
           ...(slot.offensive > 0 && { offensive: slot.offensive }),
           ...(perkIds?.some(Boolean) && { perkIds }),
+          ...(slot.hero && { hero: slot.hero }),
         },
         // L'arme chargee fait autorite sur les metadonnees d'affichage : c'est
         // ce qui alimente les vignettes de la barre flottante ailleurs sur le site.
@@ -372,6 +382,7 @@ export default function WeaponComparePage() {
                         color={SERIES_COLORS[i]}
                         locale={routeParams.locale}
                         onPick={(ref) => setRef(i, ref)}
+                        onHeroChange={slot.setHero}
                         onClear={() => {
                           setRef(i, null)
                           // Les deux premieres colonnes sont le socle de la

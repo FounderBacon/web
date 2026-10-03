@@ -285,6 +285,14 @@
     "cardAdd": "Ajouter {name} à la comparaison",
     "cardRemove": "Retirer {name} de la comparaison",
     "cardFull": "La comparaison est pleine",
-    "cardManage": "Gérer les {count} builds de {name} dans la comparaison"
+    "cardManage": "Gérer les {count} builds de {name} dans la comparaison",
+    "heroCurrent": "Loadout actuel",
+    "heroCustom": "Loadout personnalisé",
+    "heroPickerTitle": "Loadout de héros de cette colonne",
+    "heroPickerAria": "Loadout de héros : {name}. Modifier",
+    "heroNoPresets": "Enregistre un loadout comme preset sur la page loadout de héros pour le choisir ici.",
+    "heroSection": "Bonus héros",
+    "weaponTypeRanged": "Distance",
+    "weaponTypeMelee": "Mêlée"
   }
 }

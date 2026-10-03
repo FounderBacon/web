@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { GitCompareArrows, PackageOpen, SlidersHorizontal, X } from "lucide-react"
+import { GitCompareArrows, PackageOpen, Shield, SlidersHorizontal, X } from "lucide-react"
 import { AssetImage } from "@/components/ui/asset-image"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -126,6 +126,14 @@ function ColumnHeader({
       <p className="line-clamp-2 w-full text-[10px] capitalize leading-snug text-muted-foreground md:text-[11px]">
         {build.length > 0 ? build.join(" / ") : t.defaultBuild}
       </p>
+
+      {/* Loadout de heros de la colonne, quand elle en fixe un. */}
+      {entry.init.hero && (
+        <p className="flex w-full items-center justify-center gap-1 truncate text-[10px] text-muted-foreground md:text-[11px]">
+          <Shield className="size-3 shrink-0" aria-hidden />
+          <span className="truncate">{entry.init.hero.name ?? t.heroCustom}</span>
+        </p>
+      )}
 
       {/* La modal est en lecture seule : le reglage du build se fait sur la
           fiche de l'arme, qui n'etait accessible depuis nulle part ici. */}

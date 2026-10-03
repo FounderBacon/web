@@ -364,7 +364,11 @@ export default function WeaponPage() {
   );
   // Le materiau n'a de sens que sur les armes a tiers splittes.
   const currentTierEntry = weapon?.tiers?.[tier];
+  // Loadout de la colonne editee (voir plus bas) : la fiche ne le reglant pas,
+  // elle le reporte tel quel pour ne pas l'effacer en reecrivant le build.
+  const editedHero = useCompareUi((s) => s.editTarget?.init.hero);
   const compareInit: CompareSlotInit = {
+    ...(editedHero && { hero: editedHero }),
     tier,
     ...(currentTierEntry && isTierSplit(currentTierEntry) && { material }),
     ...(level > 0 && { level }),

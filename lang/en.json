@@ -285,6 +285,14 @@
     "cardAdd": "Add {name} to the comparison",
     "cardRemove": "Remove {name} from the comparison",
     "cardFull": "Comparison is full",
-    "cardManage": "Manage the {count} builds of {name} in the comparison"
+    "cardManage": "Manage the {count} builds of {name} in the comparison",
+    "heroCurrent": "Current loadout",
+    "heroCustom": "Custom loadout",
+    "heroPickerTitle": "Hero loadout for this column",
+    "heroPickerAria": "Hero loadout: {name}. Change",
+    "heroNoPresets": "Save a loadout as a preset on the hero loadout page to pick it here.",
+    "heroSection": "Hero bonus",
+    "weaponTypeRanged": "Ranged",
+    "weaponTypeMelee": "Melee"
   }
 }

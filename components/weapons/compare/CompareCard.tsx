@@ -7,6 +7,8 @@ import { AssetImage } from "@/components/ui/asset-image"
 import { weaponIcon } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
 import { WeaponPicker } from "./WeaponPicker"
+import { HeroBuildPicker } from "./HeroBuildPicker"
+import type { HeroBuild } from "@/lib/compare/hero"
 import { perkSummary } from "@/lib/compare/summary"
 import { fmt, useCompareT } from "@/lib/compare/i18n"
 import { compareEditHref } from "@/lib/compare/editLink"
@@ -20,6 +22,8 @@ interface CompareCardProps {
   locale: string
   onPick: (ref: WeaponRef) => void
   onClear: () => void
+  // Loadout de heros de la colonne (voir lib/compare/hero.ts).
+  onHeroChange: (hero: HeroBuild | undefined) => void
   removable?: boolean
   // Vrai tant qu'une colonne precedente est vide : le store compacte les
   // entrees par ordre de remplissage, donc remplir la 3e avant la 2e fait
@@ -38,7 +42,7 @@ interface CompareCardProps {
  * telephone) comme a ~280px sur desktop : le detail (rarete, categorie, lien
  * d'edition) n'apparait qu'a partir de md, ou il y a la place pour lui.
  */
-export function CompareCard({ slot, color, locale, onPick, onClear, removable, locked }: CompareCardProps) {
+export function CompareCard({ slot, color, locale, onPick, onClear, onHeroChange, removable, locked }: CompareCardProps) {
   const t = useCompareT()
   const [pickerOpen, setPickerOpen] = useState(false)
   const { weapon } = slot
@@ -138,6 +142,10 @@ export function CompareCard({ slot, color, locale, onPick, onClear, removable, l
       <p className="hidden w-full truncate text-[11px] capitalize text-muted-foreground md:block">
         <span className={`font-medium ${rarityColor}`}>{weapon.rarity}</span>
         {" / "}
+        {/* Distance ou melee : les perks de heros s'appliquent par type, c'est
+            ce qui explique qu'un meme loadout n'apporte pas le meme gain. */}
+        {isRanged ? t.weaponTypeRanged : t.weaponTypeMelee}
+        {" / "}
         {weapon.category}
         {isRanged && (weapon as RangedWeaponDetail).ammoType && (
           <>
@@ -155,6 +163,8 @@ export function CompareCard({ slot, color, locale, onPick, onClear, removable, l
         {build.join(" / ")}
       </p>
 
+      <HeroBuildPicker hero={slot.hero} onChange={onHeroChange} />
+
       {/* Le reglage du build se fait sur la fiche de l'arme. */}
       <Link
         href={compareEditHref(
@@ -165,6 +175,7 @@ export function CompareCard({ slot, color, locale, onPick, onClear, removable, l
             ...(slot.hasSplit && { material: slot.material }),
             ...(slot.level > 0 && { level: slot.level }),
             ...(slot.offensive > 0 && { offensive: slot.offensive }),
+            ...(slot.hero && { hero: slot.hero }),
             perkIds: Object.entries(slot.selectedPerks).reduce<string[]>((acc, [s, perk]) => {
               if (perk) acc[Number(s)] = perk.perkId
               return acc

@@ -32,6 +32,10 @@ export function isLowerBetter(key: string): boolean {
 export interface CompareStatGroup {
   label: string
   keys: string[]
+  // Faux : le groupe s'affiche mais ne compte pas dans le verdict. Le gain de
+  // heros est deja inclus dans les DPS ; le compter une seconde fois
+  // avantagerait deux fois la meme arme.
+  scored?: boolean
 }
 
 export const COMPARE_GROUPS: CompareStatGroup[] = [
@@ -72,6 +76,13 @@ export const COMPARE_GROUPS: CompareStatGroup[] = [
     label: "Durability",
     keys: ["durability", "durabilityPerUse", "totalShots", "totalHits"],
   },
+  {
+    // Ce que le loadout de heros ajoute, arme par arme. Le groupe n'apparait
+    // que si au moins une colonne porte un loadout (voir lib/compare/hero.ts).
+    label: "Hero bonus",
+    keys: ["heroDpsGain", "heroDpsGainPercent"],
+    scored: false,
+  },
 ]
 
 // Libelles propres aux stats calculees, absentes de STAT_LABELS.
@@ -83,6 +94,8 @@ export const COMPARE_GROUPS: CompareStatGroup[] = [
 // Le suffixe entre parentheses rattache les quatre lignes a une meme famille
 // et rend l'hypothese lisible sans ouvrir d'infobulle.
 export const COMPARE_STAT_LABELS: Record<string, string> = {
+  heroDpsGain: "DPS added by hero",
+  heroDpsGainPercent: "DPS added by hero (%)",
   critDps: "DPS (all crits)",
   avgDps: "DPS (with crit)",
   headshotDps: "DPS (headshots)",
@@ -114,6 +127,8 @@ export const COMPARE_STAT_LABELS: Record<string, string> = {
  * d'un "Damage per second" qui ne mentionnait pas qu'il excluait le crit.
  */
 export const COMPARE_STAT_DESC: Record<string, string> = {
+  heroDpsGain: "Average DPS (with crit) the hero loadout adds to this weapon, against the same weapon with no hero. Hero perks only apply to their weapon type (ranged or melee) and category, so the same loadout can add a lot to an assault rifle and nothing to a sword.",
+  heroDpsGainPercent: "The same gain, relative to the weapon's DPS without any hero.",
   critGain: "Average damage the critical hits actually add, crit chance applied to crit multiplier. A high chance on a weak multiplier is worth no more than a huge multiplier that never triggers.",
   dps: "Sustained damage per second, without any critical hit. A crit perk does not change this number.",
   avgDps: "Damage per second averaged over time, weighted by crit chance and crit multiplier. The closest to real play.",
@@ -126,7 +141,7 @@ export const COMPARE_STAT_DESC: Record<string, string> = {
 }
 
 // Stats exprimees en pourcentage cote API.
-const PERCENT_STATS = new Set(["critChance", "critDamageMultiplier", "headshotMultiplier", "critGain"])
+const PERCENT_STATS = new Set(["critChance", "critDamageMultiplier", "headshotMultiplier", "critGain", "heroDpsGainPercent"])
 
 export function isPercentStat(key: string): boolean {
   return PERCENT_STATS.has(key)
@@ -224,6 +239,8 @@ export function buildDelta(
 export interface CompareGroupResult {
   label: string
   rows: StatDelta[]
+  // Faux : affiche mais exclu du verdict.
+  scored?: boolean
 }
 
 export function buildComparison(
@@ -232,6 +249,7 @@ export function buildComparison(
 ): CompareGroupResult[] {
   return COMPARE_GROUPS.map((group) => ({
     label: group.label,
+    ...(group.scored === false && { scored: false }),
     rows: group.keys
       .map((key) => buildDelta(key, columns, fallbackLabel))
       .filter((row): row is StatDelta => row !== null),

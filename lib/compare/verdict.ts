@@ -31,7 +31,8 @@ function mean(values: number[]): number | null {
   return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null
 }
 
-export function buildVerdict(groups: CompareGroupResult[], columnCount: number): CompareVerdict {
+export function buildVerdict(allGroups: CompareGroupResult[], columnCount: number): CompareVerdict {
+  const groups = allGroups.filter((group) => group.scored !== false)
   const indexes = Array.from({ length: columnCount }, (_, i) => i)
 
   // Moyenne de la position relative de chaque colonne, categorie par categorie.

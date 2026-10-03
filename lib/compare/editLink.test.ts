@@ -39,6 +39,18 @@ describe("compareEditHref", () => {
     expect(query(compareEditHref("en", ref, { tier: "1" })).get("o")).toBe("0")
   })
 
+  it("encodes the column's hero loadout without colliding with the page's own loadout params", () => {
+    const q = query(
+      compareEditHref("en", ref, { hero: { name: "Wall", commanderPerkId: "cmd", supportPerkIds: ["b", "a"], teamPerkIds: ["t"] } }),
+    )
+    // La fiche lit hc / hs1..5 / htp comme un loadout de slugs de heros.
+    expect(q.has("hc")).toBe(false)
+    expect(q.has("htp")).toBe(false)
+    expect([...q.keys()].some((k) => /^hs\d$/.test(k))).toBe(false)
+    expect(q.get("hcx")).toBe("cmd")
+    expect(q.get("hsx")).toBe("a,b")
+  })
+
   it("omits a zero level", () => {
     expect(query(compareEditHref("en", ref, { tier: "1", level: 0 })).has("l")).toBe(false)
   })
@@ -51,6 +63,7 @@ describe("readEditInit", () => {
       { tier: "3" },
       { tier: "5", material: "crystal", level: 60, offensive: 12, perkIds: ["pa", "", "pc"] },
       { tier: "2", perkIds: ["", "pb"] },
+      { tier: "3", hero: { name: "Wall", commanderPerkId: "cmd", supportPerkIds: ["a", "b"], teamPerkIds: ["t"] } },
     ]
     for (const init of builds) {
       expect(sameBuild(readEditInit(paramsOf(compareEditHref("en", ref, init))), init)).toBe(true)
