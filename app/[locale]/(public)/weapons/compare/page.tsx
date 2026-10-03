@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { Check, Plus, Share2, Trash2 } from "lucide-react"
+import { Check, ChevronDown, Plus, Share2, Trash2 } from "lucide-react"
 import { SectionContainer } from "@/components/public/SectionContainer"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
@@ -17,18 +17,21 @@ import {
   type WeaponRef,
   type CompareSlotInit,
 } from "@/lib/compare/useCompareSlot"
-import { useCompare, MAX_COMPARE, type CompareEntry } from "@/lib/compare/store"
+import { useCompare, MAX_COMPARE, SERIES_COLORS, type CompareEntry } from "@/lib/compare/store"
+import { compareGridVars, CMP_ROW, CMP_VALUES, CMP_STICKY_TOP } from "@/lib/compare/grid"
+import { useCompareT } from "@/lib/compare/i18n"
 import { useLoadout } from "@/lib/loadout/store"
 import { loadoutToApiPayload } from "@/lib/loadout/selectors"
 
-// Trois colonnes max : au-dela le radar devient illisible et les colonnes
-// ne tiennent plus sur desktop.
-const SLOT_KEYS = ["a", "b", "c"] as const
+// Une cle d'URL par colonne, dans l'ordre. Le plafond vit dans le store
+// (MAX_COMPARE) : cette liste doit en avoir autant.
+const SLOT_KEYS = ["a", "b", "c", "d"] as const
 type SlotKey = (typeof SLOT_KEYS)[number]
 
-// Couleurs de serie fixes : la rarete ne peut pas servir de cle visuelle
-// puisque deux armes comparees ont souvent la meme.
-const SERIES_COLORS = ["#38bdf8", "#fb923c", "#a78bfa"]
+// Largeur de la colonne des libelles de stats, a partir de md seulement :
+// en dessous, les libelles passent au-dessus des valeurs et cette colonne
+// n'existe plus. Voir lib/compare/grid.ts.
+const LABEL_MIN_WIDTH = 150
 
 function readInit(params: URLSearchParams, key: SlotKey): CompareSlotInit {
   const level = parseInt(params.get(`l${key}`) ?? "", 10)
@@ -47,6 +50,7 @@ function readInit(params: URLSearchParams, key: SlotKey): CompareSlotInit {
 }
 
 export default function WeaponComparePage() {
+  const t = useCompareT()
   const routeParams = useParams<{ locale: string }>()
   const searchParams = useSearchParams()
   const initialRef = useRef(new URLSearchParams(searchParams.toString()))
@@ -94,6 +98,11 @@ export default function WeaponComparePage() {
 
   const [copied, setCopied] = useState(false)
 
+  // Radar replie par defaut sous md, deplie des md via la classe md:block :
+  // l'etat initial est le meme cote serveur et cote client, donc pas de
+  // divergence d'hydratation.
+  const [radarOpen, setRadarOpen] = useState(false)
+
   // Le loadout est partage par toutes les colonnes : c'est la condition
   // pour que la comparaison reste valide.
   const commander = useLoadout((s) => s.commander)
@@ -106,12 +115,15 @@ export default function WeaponComparePage() {
   const slotA = useCompareSlot(refs[0], heroPayload, initialEntries.current[0]?.init)
   const slotB = useCompareSlot(refs[1], heroPayload, initialEntries.current[1]?.init)
   const slotC = useCompareSlot(refs[2], heroPayload, initialEntries.current[2]?.init)
-  const slots = [slotA, slotB, slotC]
+  const slotD = useCompareSlot(refs[3], heroPayload, initialEntries.current[3]?.init)
+  const slots = [slotA, slotB, slotC, slotD]
 
-  // La troisieme colonne n'apparait qu'une fois demandee.
-  const [thirdVisible, setThirdVisible] = useState(false)
-  // Une troisieme arme deja presente (store ou URL) force l'affichage.
-  const visibleCount = thirdVisible || refs[2] !== null ? 3 : 2
+  // Deux colonnes par defaut ; les suivantes n'apparaissent qu'a la demande.
+  const [extraColumns, setExtraColumns] = useState(0)
+  // Une colonne deja remplie (store ou URL) force son affichage. Les colonnes
+  // se remplissent dans l'ordre, donc le dernier index rempli donne le compte.
+  const filledCount = refs.reduce((max, ref, i) => (ref !== null ? i + 1 : max), 0)
+  const visibleCount = Math.min(MAX_COMPARE, Math.max(2, 2 + extraColumns, filledCount))
 
   function setRef(index: number, ref: WeaponRef | null) {
     setRefs((prev) => {
@@ -255,24 +267,32 @@ export default function WeaponComparePage() {
         <div className="border-b border-border/50 bg-background px-4 py-3 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-lg font-bold uppercase leading-tight text-foreground sm:text-xl">
-                Weapon Compare
+              <h1 className="font-burbank text-lg uppercase leading-tight text-foreground sm:text-xl">
+                {t.title}
               </h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                Stats side by side. Set each build on its weapon page.
+                {t.subtitle}
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            {/* Les libelles restent visibles sur mobile : trois boutons
+                reduits a une icone de 12px etaient indevinables, et l'un
+                d'eux efface la comparaison. */}
+            <div className="flex flex-wrap items-center gap-2">
               {visibleCount < MAX_COMPARE && (
-                <Button size="xs" variant="outline" onClick={() => setThirdVisible(true)}>
+                <Button size="xs" variant="outline" onClick={() =>
+                    // Depuis le nombre affiche : des colonnes restaurees du
+                    // store ou de l'URL le portent deja au-dela de 2 + extra,
+                    // et un simple +1 ne changeait rien au premier clic.
+                    setExtraColumns(visibleCount + 1 - 2)
+                  }>
                   <Plus className="size-3" />
-                  <span className="hidden sm:inline">Add a third</span>
+                  {t.addColumn}
                 </Button>
               )}
               <Button size="xs" variant="outline" onClick={handleShare} disabled={!hasAnyWeapon}>
                 {copied ? <Check className="size-3" /> : <Share2 className="size-3" />}
-                <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
+                {copied ? t.copied : t.share}
               </Button>
               <Button
                 size="xs"
@@ -280,78 +300,111 @@ export default function WeaponComparePage() {
                 onClick={() => {
                   clearCompare()
                   setRefs(SLOT_KEYS.map(() => null))
-                  setThirdVisible(false)
+                  setExtraColumns(0)
                 }}
                 disabled={!hasAnyWeapon}
               >
                 <Trash2 className="size-3" />
-                <span className="hidden sm:inline">Clear</span>
+                {t.clear}
               </Button>
             </div>
           </div>
         </div>
 
         <div className="px-4 py-5 sm:px-6">
-          {/* Cartes d'armes : compactes et en lecture seule, pour que le tableau
-              de stats reste atteignable sans scroller. Le meme scroll horizontal
-              que le tableau garde les colonnes lisibles sur mobile. */}
-          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div
-              className="grid gap-3"
-              style={{ gridTemplateColumns: `repeat(${visibleCount}, minmax(240px, 1fr))` }}
-            >
-              {active.map((slot, i) => (
-                <CompareCard
-                  key={i}
-                  slot={slot}
-                  color={SERIES_COLORS[i]}
-                  locale={routeParams.locale}
-                  onPick={(ref) => setRef(i, ref)}
-                  onClear={() => {
-                    setRef(i, null)
-                    if (i === 2) setThirdVisible(false)
-                  }}
-                  removable={i === 2}
-                  // Remplir une colonne avant les precedentes desynchronise sa
-                  // position du store (qui compacte par ordre de remplissage).
-                  locked={i > 0 && refs[i - 1] === null}
-                />
-              ))}
-            </div>
-          </div>
+          {/* xl:grid-cols n'apparait qu'avec un radar a afficher a cote : sinon
+              une seule colonne, pleine largeur, pour les colonnes + le tableau. */}
+          <div
+            className={`grid gap-5 ${comparableCount >= 2 ? "xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)] xl:items-start" : ""}`}
+          >
+            {comparableCount >= 2 && (
+              // Colle sous la navbar en xl : le tableau de stats est bien plus
+              // long que le radar, le laisser scroller seul plutot que de vider
+              // tout l'espace sous un bloc plus court.
+              <div className={`border border-border/50 xl:sticky ${CMP_STICKY_TOP}`}>
+                <div className="flex items-center justify-between gap-2 px-4 py-3">
+                  <p className="font-burbank text-sm uppercase tracking-wider text-foreground">{t.profile}</p>
+                  {/* Repli sur mobile uniquement : le radar y occupe un ecran
+                      entier avant qu'on atteigne le tableau, qui est ce que
+                      la page promet. Des md il est ouvert et le bouton
+                      disparait. */}
+                  <button
+                    type="button"
+                    onClick={() => setRadarOpen((v) => !v)}
+                    aria-expanded={radarOpen}
+                    className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground md:hidden"
+                  >
+                    {radarOpen ? t.hide : t.show}
+                    <ChevronDown className={`size-3.5 transition-transform ${radarOpen ? "rotate-180" : ""}`} />
+                  </button>
+                </div>
 
-          {/* Resultats de la comparaison */}
-          {comparableCount >= 2 ? (
-            <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] xl:items-start">
-              <div className="border border-border/50 p-4">
-                <p className="mb-2 font-burbank text-sm uppercase tracking-wider text-foreground">Profile</p>
-                <CompareRadar columns={statColumns} names={names} colors={SERIES_COLORS} />
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                  Axes are scaled against the weapons shown here, not against the whole game.
-                </p>
-              </div>
-
-              {/* Le tableau deborde sur mobile : il scrolle dans son propre
-                  conteneur plutot que d'ecraser les colonnes. */}
-              <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-                <div style={{ minWidth: `${180 + visibleCount * 110}px` }}>
-                  <CompareStatsTable columns={statColumns} names={names} />
+                <div className={`px-4 pb-4 ${radarOpen ? "" : "hidden"} md:block`}>
+                  <CompareRadar columns={statColumns} names={names} colors={SERIES_COLORS} />
+                  <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                    {t.radarScaleNote}
+                  </p>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="mt-5 border border-dashed border-border/60 px-6 py-12 text-center">
-              <p className="text-sm text-muted-foreground">
-                Pick at least two weapons to see the comparison.
-              </p>
-              <Link
-                href={`/${routeParams.locale}/search/weapons`}
-                className="mt-2 inline-block text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+            )}
+
+            {/* En-tete de colonnes et tableau de stats partagent la meme grille,
+                portee par des variables CSS posees ici. Plus aucun conteneur a
+                defilement horizontal : sous md, le tableau passe en lignes
+                empilees (voir lib/compare/grid.ts), ce qui supprime a la fois
+                le scroll lateral et le sticky pris en defaut par un ancetre
+                scrollable. */}
+            <div style={compareGridVars(visibleCount, LABEL_MIN_WIDTH)}>
+              <div
+                className={`sticky z-20 border border-b-0 border-border/50 bg-background md:gap-2 ${CMP_STICKY_TOP} ${CMP_ROW}`}
               >
-                Browse all weapons
-              </Link>
+                <div className="hidden items-end px-4 pb-3 md:flex">
+                  <p className="font-burbank text-sm uppercase tracking-wider text-muted-foreground">{t.weapon}</p>
+                </div>
+
+                <div className={CMP_VALUES}>
+                  {active.map((slot, i) => (
+                    // Meme separateur vertical que les lignes de stats en
+                    // dessous : la colonne reste identifiable a la limite pres.
+                    <div key={i} className={i > 0 ? "border-l border-border/30" : ""}>
+                      <CompareCard
+                        slot={slot}
+                        color={SERIES_COLORS[i]}
+                        locale={routeParams.locale}
+                        onPick={(ref) => setRef(i, ref)}
+                        onClear={() => {
+                          setRef(i, null)
+                          // Les deux premieres colonnes sont le socle de la
+                          // comparaison ; seules celles ajoutees se retirent.
+                          if (i >= 2) setExtraColumns(Math.max(0, visibleCount - 1 - 2))
+                        }}
+                        removable={i >= 2}
+                        // Remplir une colonne avant les precedentes desynchronise sa
+                        // position du store (qui compacte par ordre de remplissage).
+                        locked={i > 0 && refs[i - 1] === null}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {comparableCount >= 2 ? (
+                <CompareStatsTable columns={statColumns} names={names} colors={SERIES_COLORS} />
+              ) : (
+                <div className="border border-dashed border-border/60 px-6 py-12 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {t.pickTwo}
+                  </p>
+                  <Link
+                    href={`/${routeParams.locale}/search/weapons`}
+                    className="mt-2 inline-block text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+                  >
+                    {t.browseWeapons}
+                  </Link>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </SectionContainer>
     </TooltipProvider>

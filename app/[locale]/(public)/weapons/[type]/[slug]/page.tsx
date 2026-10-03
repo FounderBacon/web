@@ -10,8 +10,10 @@ import { track } from "@/lib/api/track";
 import { buildHeroSlot } from "@/lib/loadout/buildSlot";
 import { loadoutToApiPayload } from "@/lib/loadout/selectors";
 import { useLoadout, type LoadoutHeroSlot, type LoadoutTeamPerk } from "@/lib/loadout/store";
-import { useCompare, useIsInCompare, MAX_COMPARE } from "@/lib/compare/store";
-import type { WeaponRef } from "@/lib/compare/useCompareSlot";
+import { useCompare, useCompareMembership, normalizePerkIds, sameBuild, sameEntry, MAX_COMPARE } from "@/lib/compare/store";
+import { COMPARE_EDIT_PARAM, readEditInit } from "@/lib/compare/editLink";
+import { useCompareUi } from "@/lib/compare/ui";
+import type { WeaponRef, CompareSlotInit } from "@/lib/compare/useCompareSlot";
 import type { WeaponDetail, TierData, TierEntry, Perk } from "@/lib/types/weapon";
 import type { CalculatedStats } from "@/lib/types/calculate";
 import { isTierSplit } from "@/lib/types/weapon";
@@ -349,33 +351,69 @@ export default function WeaponPage() {
   const compareRef: WeaponRef = { type: params.type as "ranged" | "melee", slug: params.slug };
   const addToCompare = useCompare((s) => s.add);
   const compareCount = useCompare((s) => s.entries.length);
-  const inCompare = useIsInCompare(compareRef);
+
+  // Build courant, decrit exactement comme le comparateur le stocke. Il sert
+  // a la fois a l'ajout et a l'etat du bouton : c'est lui qui distingue
+  // "deja dans le comparateur" de "la meme arme, mais avec un autre build".
+  const maxPerkSlot = Math.max(-1, ...Object.keys(selectedPerks).map(Number));
+  // Encodage positionnel des perks : l'index = le numero de slot, les vides
+  // restent vides — meme convention que la lecture d'URL du comparateur.
+  // Sans slots vides en queue : un perk retire laisse une entree null.
+  const comparePerkIds = normalizePerkIds(
+    maxPerkSlot >= 0 ? Array.from({ length: maxPerkSlot + 1 }, (_, s) => selectedPerks[s]?.perkId ?? "") : [],
+  );
+  // Le materiau n'a de sens que sur les armes a tiers splittes.
+  const currentTierEntry = weapon?.tiers?.[tier];
+  const compareInit: CompareSlotInit = {
+    tier,
+    ...(currentTierEntry && isTierSplit(currentTierEntry) && { material }),
+    ...(level > 0 && { level }),
+    ...(offensive > 0 && { offensive }),
+    ...(comparePerkIds.length > 0 && { perkIds: comparePerkIds }),
+  };
+
+  const compareState = useCompareMembership(compareRef, compareInit);
+
+  // Arrivee depuis "Edit build" : la fiche edite une colonne du comparateur,
+  // retrouvee par son arme et son dernier build connu (voir lib/compare/ui.ts).
+  // On met alors cette entree a jour au lieu d'en ajouter une seconde.
+  const isEditLink = initialParamsRef.current[COMPARE_EDIT_PARAM] !== undefined;
+  const editTarget = useCompareUi((s) => s.editTarget);
+  const editedIndex = useCompare((s) => (editTarget ? s.entries.findIndex((e) => sameEntry(e, editTarget)) : -1));
+  // Colonne retiree entre-temps : la fiche retombe en mode ajout.
+  const editing = editTarget && editedIndex !== -1 ? { dirty: !sameBuild(editTarget.init, compareInit) } : null;
+
+  useEffect(() => {
+    if (!isEditLink) return;
+    useCompareUi.setState({
+      editTarget: { ref: { type: params.type as "ranged" | "melee", slug: params.slug }, init: readEditInit(initialParamsRef.current) },
+    });
+    return () => useCompareUi.setState({ editTarget: null });
+  }, [isEditLink, params.type, params.slug]);
 
   function handleCompare() {
-    // Encodage positionnel des perks : l'index = le numero de slot, les vides
-    // restent vides — meme convention que la lecture d'URL du comparateur.
-    const maxSlot = Math.max(-1, ...Object.keys(selectedPerks).map(Number));
-    const perkIds =
-      maxSlot >= 0
-        ? Array.from({ length: maxSlot + 1 }, (_, s) => selectedPerks[s]?.perkId ?? "")
-        : undefined;
-
-    // Le materiau n'a de sens que sur les armes a tiers splittes.
-    const entry = weapon?.tiers[tier];
-    const splitTier = entry ? isTierSplit(entry) : false;
-
     addToCompare({
       ref: compareRef,
-      init: {
-        tier,
-        ...(splitTier && { material }),
-        ...(level > 0 && { level }),
-        ...(offensive > 0 && { offensive }),
-        ...(perkIds?.some(Boolean) && { perkIds }),
-      },
+      init: compareInit,
       ...(weapon && { name: weapon.name, icon: weapon.icon, rarity: weapon.rarity }),
     });
   }
+
+  // En edition d'une colonne, chaque reglage du build est reporte tel quel dans
+  // le comparateur : pas de bouton a presser, la colonne suit la fiche. On
+  // attend l'arme chargee, car les perks de l'URL ne sont resolus qu'a ce
+  // moment-la — ecrire avant effacerait les perks de l'entree. La cible suit
+  // chaque ecriture, pour retrouver la colonne au reglage suivant.
+  const compareInitKey = JSON.stringify(compareInit);
+  useEffect(() => {
+    if (!weapon || !editTarget || editedIndex === -1) return;
+    if (sameBuild(editTarget.init, compareInit)) return;
+    const entry = useCompare.getState().entries[editedIndex];
+    useCompare.getState().setAt(editedIndex, { ...entry, init: compareInit });
+    useCompareUi.setState({ editTarget: { ref: editTarget.ref, init: compareInit } });
+    // compareInitKey serialise compareInit : evite de re-ecrire a chaque rendu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weapon, editTarget, editedIndex, compareInitKey]);
 
   if (loading) {
     return (
@@ -429,7 +467,8 @@ export default function WeaponPage() {
           sharePath={buildSharePath()}
           shareUrl={buildShareUrl()}
           onCompare={handleCompare}
-          inCompare={inCompare}
+          compareState={compareState}
+          compareEditing={editing}
           compareFull={compareCount >= MAX_COMPARE}
           compareCount={compareCount}
         />

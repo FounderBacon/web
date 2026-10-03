@@ -6,6 +6,7 @@ import type { WeaponDetail, Perk, TierEntry } from "@/lib/types/weapon"
 import { isTierSplit } from "@/lib/types/weapon"
 import type { CalculatedStats } from "@/lib/types/calculate"
 import type { LoadoutApiPayload } from "@/lib/loadout/selectors"
+import { effectiveHeroPayload, normalizeHero, withHeroGain, type HeroBuild } from "./hero"
 
 export type WeaponType = "ranged" | "melee"
 
@@ -33,6 +34,8 @@ export interface CompareSlotInit {
   level?: number
   offensive?: number
   perkIds?: string[]
+  // Loadout de heros propre a la colonne. Absent : elle suit celui de l'utilisateur.
+  hero?: HeroBuild
 }
 
 export interface CompareSlotState {
@@ -44,6 +47,7 @@ export interface CompareSlotState {
   level: number
   offensive: number
   selectedPerks: Record<number, Perk | null>
+  hero: HeroBuild | undefined
   stats: CalculatedStats | null
   statsLoading: boolean
   hasSplit: boolean
@@ -51,6 +55,7 @@ export interface CompareSlotState {
   setMaterial: (material: "ore" | "crystal") => void
   setLevel: (level: number) => void
   setOffensive: (offensive: number) => void
+  setHero: (hero: HeroBuild | undefined) => void
   selectPerk: (slot: number, perk: Perk | null) => void
   resetPerks: () => void
 }
@@ -59,8 +64,10 @@ export interface CompareSlotState {
  * Gere une colonne du comparateur : chargement de l'arme, tier/materiau/level
  * independants, perks, et appel /calculate.
  *
- * Le loadout heros est passe en parametre pour rester identique sur toutes les
- * colonnes — c'est ce qui rend la comparaison valide.
+ * Le loadout heros passe en parametre est celui de l'utilisateur, applique par
+ * defaut a toutes les colonnes. Une colonne peut fixer le sien (`setHero`) pour
+ * comparer deux builds de heros ; le gain de DPS qu'il apporte est alors mesure
+ * face au meme calcul sans heros.
  */
 export function useCompareSlot(
   ref: WeaponRef | null,
@@ -75,16 +82,34 @@ export function useCompareSlot(
   const [level, setLevel] = useState(init?.level ?? 0)
   const [offensive, setOffensive] = useState(init?.offensive ?? 0)
   const [selectedPerks, setSelectedPerks] = useState<Record<number, Perk | null>>({})
+  const [hero, setHero] = useState<HeroBuild | undefined>(normalizeHero(init?.hero))
   const [stats, setStats] = useState<CalculatedStats | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
 
-  // Les valeurs d'URL ne s'appliquent qu'au premier chargement de l'arme.
-  const initRef = useRef(init)
-  const initConsumedRef = useRef(false)
-  const levelFromInitRef = useRef(init?.level !== undefined)
+  // Build de depart a appliquer, et build deja applique.
+  //
+  // L'init n'est pas toujours connu au premier rendu : la page compare lit
+  // d'abord l'URL, et ne retombe sur le store persiste que dans un effet de
+  // layout (le localStorage est invisible au serveur). Se contenter de la
+  // valeur du montage faisait repartir toute comparaison restauree depuis le
+  // store sur le build par defaut — tier 1, niveau 1, aucun perk — ce qui
+  // vidait de son sens le fait de comparer deux builds d'une meme arme.
+  //
+  // La comparaison porte sur l'identite de l'objet, pas sur son contenu :
+  // changer l'arme d'une colonne conserve le meme objet init, qui ne doit donc
+  // pas etre re-applique a une arme a laquelle il n'appartient pas.
+  const pendingInitRef = useRef<CompareSlotInit | undefined>(init)
+  const appliedInitRef = useRef<CompareSlotInit | undefined>(undefined)
+  const levelFromInitRef = useRef(false)
   const calcAbortRef = useRef<AbortController | null>(null)
 
   const slotKey = ref ? serializeWeaponRef(ref) : null
+
+  // Declare avant l'effet de chargement pour s'executer avant lui dans le meme
+  // commit : l'init recu ce rendu doit etre visible quand l'arme se charge.
+  useEffect(() => {
+    pendingInitRef.current = init
+  })
 
   // Chargement de l'arme + restauration des perks depuis l'URL.
   useEffect(() => {
@@ -113,11 +138,29 @@ export function useCompareSlot(
         }
         setWeapon(data)
 
-        // Perks d'URL : uniquement au premier montage, sur l'arme d'origine.
-        if (!initConsumedRef.current && initRef.current?.perkIds?.length && data.perkSlots) {
+        // Le build de depart ne s'applique qu'une fois, au chargement de
+        // l'arme a laquelle il se rapporte.
+        const pending = pendingInitRef.current
+        const fresh = pending !== undefined && pending !== appliedInitRef.current
+        appliedInitRef.current = pendingInitRef.current
+
+        if (fresh) {
+          setHero(normalizeHero(pending.hero))
+          if (pending.tier && data.tiers[pending.tier]) setTier(pending.tier)
+          if (pending.material) setMaterial(pending.material)
+          if (pending.offensive !== undefined) setOffensive(pending.offensive)
+          if (pending.level !== undefined) {
+            // Signale a l'effet "le level suit le tier" de borner cette valeur
+            // au lieu de la remplacer par le minimum du tier.
+            levelFromInitRef.current = true
+            setLevel(pending.level)
+          }
+        }
+
+        if (fresh && pending.perkIds?.length && data.perkSlots) {
           const restored: Record<number, Perk | null> = {}
           for (const slot of data.perkSlots) {
-            const perkId = initRef.current.perkIds[slot.slot]
+            const perkId = pending.perkIds[slot.slot]
             if (!perkId) continue
             const found = slot.availablePerks.find((p) => p.perkId === perkId)
             if (found) restored[slot.slot] = found
@@ -126,7 +169,6 @@ export function useCompareSlot(
         } else {
           setSelectedPerks({})
         }
-        initConsumedRef.current = true
       })
       .catch(() => {
         if (!cancelled) setError(true)
@@ -138,6 +180,9 @@ export function useCompareSlot(
     return () => {
       cancelled = true
     }
+    // Cle sur l'identite serialisee de l'arme : `ref` est un objet recree par
+    // l'appelant a chaque rendu, en dependre rechargerait l'arme en boucle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slotKey])
 
   // Le tier de l'URL peut ne pas exister sur l'arme chargee (ex: apres un swap).
@@ -166,7 +211,8 @@ export function useCompareSlot(
   }, [weapon, tier, material])
 
   // Appel /calculate a chaque changement de configuration.
-  const heroKey = JSON.stringify(heroPayload ?? null)
+  const effectiveHero = effectiveHeroPayload(hero, heroPayload)
+  const heroKey = JSON.stringify(effectiveHero ?? null)
 
   useEffect(() => {
     if (!weapon?.tiers || !ref) return
@@ -182,17 +228,17 @@ export function useCompareSlot(
 
     setStatsLoading(true)
 
-    calculateWeaponStats(ref.type, ref.slug, {
-      tier,
-      material,
-      level,
-      offensive,
-      perkIds,
-      ...(heroPayload && { hero: heroPayload }),
-    })
-      .then((res) => {
+    const params = { tier, material, level, offensive, perkIds }
+
+    // Sans heros, un seul calcul. Avec, un second sans lui : c'est la
+    // difference des deux qui donne le gain de DPS du loadout.
+    Promise.all([
+      calculateWeaponStats(ref.type, ref.slug, { ...params, ...(effectiveHero && { hero: effectiveHero }) }),
+      effectiveHero ? calculateWeaponStats(ref.type, ref.slug, params) : Promise.resolve(null),
+    ])
+      .then(([res, base]) => {
         if (controller.signal.aborted) return
-        setStats(res.stats)
+        setStats(withHeroGain(res.stats, base?.stats ?? null))
       })
       .catch(() => {
         if (controller.signal.aborted) return
@@ -228,6 +274,7 @@ export function useCompareSlot(
     level,
     offensive,
     selectedPerks,
+    hero,
     stats,
     statsLoading,
     hasSplit,
@@ -235,6 +282,7 @@ export function useCompareSlot(
     setMaterial,
     setLevel,
     setOffensive,
+    setHero,
     selectPerk,
     resetPerks,
   }

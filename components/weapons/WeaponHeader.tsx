@@ -1,12 +1,14 @@
 "use client"
 
-import { Camera, Check, GitCompareArrows, QrCode, Share2 } from "lucide-react"
+import { Ban, Camera, Check, GitCompareArrows, QrCode, Share2 } from "lucide-react"
 import { useState } from "react"
 import { QrShareDialog } from "@/components/share/QrShareDialog"
 import { AssetImage } from "@/components/ui/asset-image"
 import { Button } from "@/components/ui/button"
 import { weaponIcon } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
+import { useCompareT } from "@/lib/compare/i18n"
+import type { CompareMembership } from "@/lib/compare/store"
 import type { RangedWeaponDetail, WeaponDetail } from "@/lib/types/weapon"
 
 interface WeaponHeaderProps {
@@ -20,7 +22,9 @@ interface WeaponHeaderProps {
   shareUrl: string
   onCompare: () => void
   // Etat du comparateur, pour basculer le libelle du bouton.
-  inCompare: boolean
+  compareState: CompareMembership
+  // Non nul quand la fiche edite une colonne existante du comparateur.
+  compareEditing: { dirty: boolean } | null
   compareFull: boolean
   compareCount: number
 }
@@ -33,13 +37,38 @@ export function WeaponHeader({
   sharePath,
   shareUrl,
   onCompare,
-  inCompare,
+  compareState,
+  compareEditing,
   compareFull,
   compareCount,
 }: WeaponHeaderProps) {
   const rarityColor = RARITY_TEXT[weapon.rarity] ?? "text-muted-foreground"
   const isRanged = weapon.type === "ranged"
+  const t = useCompareT()
   const [qrOpen, setQrOpen] = useState(false)
+
+  // En edition d'une colonne, le plafond de colonnes ne s'applique pas : on
+  // remplace une entree, on n'en ajoute pas.
+  const upToDate = compareEditing ? true : compareState === "exact"
+  const blocked = !compareEditing && compareFull && compareState !== "exact"
+  const compareLabel = compareEditing
+    ? t.btnSynced
+    : blocked
+      ? t.btnFull
+      : upToDate
+        ? t.btnInCompare
+        : compareState === "other-build"
+          ? t.btnAddBuild
+          : t.btnCompare
+  const compareTitle = compareEditing
+    ? t.titleSynced
+    : upToDate
+      ? t.titleExact
+      : blocked
+        ? t.titleFull
+        : compareState === "other-build"
+          ? t.titleOtherBuild
+          : t.titleAdd
 
   return (
     <div className="border-b border-border/50 bg-background px-4 py-3 sm:px-6">
@@ -69,24 +98,32 @@ export function WeaponHeader({
         </div>
 
         <div className="flex items-center gap-2.5">
+          {/* Quatre etats. La meme arme peut figurer plusieurs fois avec des
+              builds differents, donc "deja dans le comparateur" ne suffit pas :
+              tant que le build affiche differe de ceux deja compares, le bouton
+              reste une action. Et un bouton desactive doit dire pourquoi sur le
+              bouton lui-meme — un `title` ne s'affiche pas au toucher, ce qui
+              rendait le plafond de colonnes totalement muet sur mobile. */}
           <Button
             size="xs"
-            variant={inCompare ? "default" : "outline"}
+            variant={upToDate ? "default" : "outline"}
             onClick={onCompare}
-            // Le comparateur plein n'accepte plus d'arme, sauf pour mettre a
-            // jour la config de celle qui y est deja.
-            disabled={compareFull && !inCompare}
-            title={
-              inCompare
-                ? "Update this weapon's build in the comparison"
-                : compareFull
-                  ? "Comparison is full — remove a weapon first"
-                  : "Add this weapon to the comparison"
-            }
+            // Le comparateur plein n'accepte plus d'ajout, mais mettre a jour
+            // une colonne existante reste possible.
+            disabled={upToDate || blocked}
+            title={compareTitle}
           >
-            {inCompare ? <Check className="size-3" /> : <GitCompareArrows className="size-3" />}
-            <span className="hidden sm:inline">
-              {inCompare ? "In compare" : "Compare"}
+            {blocked ? (
+              <Ban className="size-3" />
+            ) : upToDate ? (
+              <Check className="size-3" />
+            ) : (
+              <GitCompareArrows className="size-3" />
+            )}
+            {/* Ce bouton porte un etat, contrairement a ses voisins : son
+                libelle reste visible a toutes les largeurs. */}
+            <span>
+              {compareLabel}
               {compareCount > 0 && ` (${compareCount})`}
             </span>
           </Button>

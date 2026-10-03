@@ -70,6 +70,9 @@ export function Navbar({ locale, dict }: NavbarProps) {
           </button>
 
           <div className="hidden items-center gap-4 lg:flex">
+            <Link href={`/${locale}/weapons/compare`} className={linkClass(`/${locale}/weapons/compare`)}>
+              {dict.navbar.compare}
+            </Link>
             <Link href={`/${locale}/changelog`} className={linkClass(`/${locale}/changelog`)}>
               {dict.navbar.changelog}
             </Link>
@@ -97,6 +100,13 @@ export function Navbar({ locale, dict }: NavbarProps) {
             onClick={() => setOpen(false)}
           >
             {dict.navbar.search}
+          </Link>
+          <Link
+            href={`/${locale}/weapons/compare`}
+            className={linkClass(`/${locale}/weapons/compare`)}
+            onClick={() => setOpen(false)}
+          >
+            {dict.navbar.compare}
           </Link>
           <Link
             href={`/${locale}/changelog`}

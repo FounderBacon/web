@@ -3,6 +3,7 @@
 import type { CalculatedStats } from "@/lib/types/calculate"
 import { buildRadarModel, polarPoint, polygonPath } from "@/lib/compare/radar"
 import { formatStat } from "@/lib/format"
+import { useCompareT } from "@/lib/compare/i18n"
 
 interface CompareRadarProps {
   columns: (CalculatedStats | null)[]
@@ -19,6 +20,7 @@ const RINGS = 4
 const PAD_X = 56
 
 export function CompareRadar({ columns, names, colors }: CompareRadarProps) {
+  const t = useCompareT()
   const model = buildRadarModel(columns)
   const axisCount = model.axes.length
 
@@ -27,19 +29,23 @@ export function CompareRadar({ columns, names, colors }: CompareRadarProps) {
     return (
       <div className="flex min-h-72 items-center justify-center border border-border/50 p-6 text-center">
         <p className="max-w-64 text-sm text-muted-foreground">
-          Not enough shared stats between these weapons to draw a radar.
+          {t.radarNotEnough}
         </p>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    // Entre md et xl la page est large mais le radar n'a pas de voisin : le
+    // poser a cote de ses valeurs brutes, plutot que dessus, evite qu'il
+    // occupe un ecran entier avant qu'on atteigne le tableau de stats. En xl
+    // il retrouve sa colonne etroite et repasse en pile.
+    <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:gap-6 xl:flex-col xl:items-center">
       <svg
         viewBox={`${-PAD_X} 0 ${SIZE + PAD_X * 2} ${SIZE}`}
-        className="w-full max-w-96"
+        className="w-full max-w-80 shrink-0 md:max-w-64 xl:max-w-96"
         role="img"
-        aria-label="Weapon stats radar comparison"
+        aria-label={t.radarAria}
       >
         {/* Grille concentrique */}
         {Array.from({ length: RINGS }, (_, ring) => {
@@ -108,23 +114,30 @@ export function CompareRadar({ columns, names, colors }: CompareRadarProps) {
 
       {/* Valeurs brutes par axe : une suite de nombres sans en-tete d'axe
           n'etait pas lisible, chaque valeur est donc rattachee a son axe. */}
-      <div className="w-full overflow-x-auto">
-        <table className="w-full text-xs">
+      <div className="w-full min-w-0 overflow-x-auto">
+        {/* table-fixed : sans lui, les colonnes prennent la largeur de leur
+            contenu et la derniere arme se faisait clipper hors du panneau
+            entre md et xl, la ou le radar occupe deja la moitie de la place. */}
+        <table className="w-full table-fixed text-xs">
           <thead>
             <tr className="border-b border-border/40">
-              <th className="pb-1.5 pr-2 text-left font-normal text-muted-foreground">Axis</th>
+              <th className="pb-1.5 pr-2 text-left font-normal text-muted-foreground">{t.axis}</th>
               {model.series.map((serie, si) => {
                 const name = names[si]
                 if (!name || serie.points.length === 0) return null
                 return (
-                  <th key={si} className="pb-1.5 pl-2 text-right font-medium">
-                    <span className="inline-flex items-center gap-1.5">
+                  // overflow-hidden + min-w-0 : avec table-fixed la cellule a
+                  // une largeur imposee, mais un inline-flex ne se laisse pas
+                  // reduire en dessous de son contenu — les noms se
+                  // chevauchaient dans la colonne etroite du mode xl.
+                  <th key={si} className="overflow-hidden pb-1.5 pl-2 text-right font-medium">
+                    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
                       <span
                         className="size-2 shrink-0 rounded-full"
                         style={{ backgroundColor: colors[si] ?? colors[0] }}
                         aria-hidden
                       />
-                      <span className="max-w-24 truncate text-foreground">{name}</span>
+                      <span className="min-w-0 truncate text-foreground">{name}</span>
                     </span>
                   </th>
                 )
@@ -140,6 +153,7 @@ export function CompareRadar({ columns, names, colors }: CompareRadarProps) {
                   return (
                     <td key={si} className="py-1 pl-2 text-right tabular-nums text-foreground/80">
                       {formatStat(serie.points[ai]?.raw ?? null)}
+                      {serie.points[ai]?.raw !== null && axis.suffix}
                     </td>
                   )
                 })}
