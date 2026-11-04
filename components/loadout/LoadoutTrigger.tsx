@@ -3,6 +3,7 @@
 import { Users } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { LoadoutDrawer } from "@/components/loadout/LoadoutDrawer"
+import { useMounted } from "@/hooks/use-mounted"
 import { LoadoutHint } from "@/components/loadout/LoadoutHint"
 import { countFilledSlots, hasAnyLoadout } from "@/lib/loadout/selectors"
 import { useLoadout } from "@/lib/loadout/store"
@@ -14,17 +15,14 @@ const HINT_DISMISSED_KEY = "fbcn-loadout-hint-dismissed"
 const HINT_DELAY_MS = 1200
 
 export function LoadoutTrigger() {
+  const mounted = useMounted()
   const [open, setOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const [hintArmed, setHintArmed] = useState(false)
   const commander = useLoadout((s) => s.commander)
   const support = useLoadout((s) => s.support)
   const teamPerks = useLoadout((s) => s.teamPerks)
 
   // Skip pendant l'hydration (zustand persist) pour eviter mismatch
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const filled = hasAnyLoadout({ commander, support, teamPerks })
   const count = mounted ? countFilledSlots({ commander, support, teamPerks }) : 0
