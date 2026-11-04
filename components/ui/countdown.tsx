@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useMounted } from "@/hooks/use-mounted"
 
 type TimeLeft = {
   days: number
@@ -42,11 +43,10 @@ export function Countdown({ targetDate, labels, className, onComplete }: Countdo
   const [timeLeft, setTimeLeft] = React.useState<TimeLeft>(() =>
     calculateTimeLeft(targetDate)
   )
-  const [mounted, setMounted] = React.useState(false)
+  const mounted = useMounted()
   const completedRef = React.useRef(false)
 
   React.useEffect(() => {
-    setMounted(true)
     const timer = setInterval(() => {
       const next = calculateTimeLeft(targetDate)
       setTimeLeft(next)

@@ -9,6 +9,9 @@ import { track } from "@/lib/api/track";
 import type { TrapDetail } from "@/lib/types/trap";
 import type { TierData } from "@/lib/types/shared";
 import type { Perk } from "@/lib/types/weapon";
+import { splitPerkSlots } from "@/lib/perks";
+import { loadoutToApiPayload } from "@/lib/loadout/selectors";
+import { useLoadout } from "@/lib/loadout/store";
 import { SectionContainer } from "@/components/public/SectionContainer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TrapHeader } from "@/components/traps/TrapHeader";
@@ -55,6 +58,18 @@ export default function TrapPage() {
   const [statsLoading, setStatsLoading] = useState(false);
   const calcAbortRef = useRef<AbortController | null>(null);
   const trackCalcRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Loadout heros (commander + support + team) : perks applicables aux pieges
+  const loadoutCommander = useLoadout((s) => s.commander);
+  const loadoutSupport = useLoadout((s) => s.support);
+  const loadoutTeamPerks = useLoadout((s) => s.teamPerks);
+  const heroPayload = loadoutToApiPayload({
+    commander: loadoutCommander,
+    support: loadoutSupport,
+    teamPerks: loadoutTeamPerks,
+  });
+  // Serialise pour une dep stable (re-calc seulement quand le loadout change reellement)
+  const heroKey = JSON.stringify(heroPayload ?? null);
 
   useEffect(() => {
     async function load() {
@@ -132,8 +147,15 @@ export default function TrapPage() {
       perkIds: [],
     });
 
-    const modifiedReq = perkIds.length > 0
-      ? calculateTrapStats(params.slug, { tier, level, offensive, perkIds })
+    // Stats finales : avec heros et/ou perks (sinon = base)
+    const modifiedReq = perkIds.length > 0 || heroPayload
+      ? calculateTrapStats(params.slug, {
+          tier,
+          level,
+          offensive,
+          perkIds,
+          ...(heroPayload && { hero: heroPayload }),
+        })
       : null;
 
     Promise.all([baseReq, modifiedReq])
@@ -166,7 +188,8 @@ export default function TrapPage() {
       controller.abort();
       if (trackCalcRef.current) clearTimeout(trackCalcRef.current);
     };
-  }, [trap, tier, level, offensive, selectedPerks, params.slug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- heroPayload est represente par heroKey
+  }, [trap, tier, level, offensive, selectedPerks, params.slug, heroKey]);
 
   // Construction des query params (utilisee par sync URL + share + QR).
   //
@@ -236,8 +259,8 @@ export default function TrapPage() {
 
   const tierData: TierData | undefined = trap.tiers[tier];
 
-  const lastSlot = trap.perkSlots[trap.perkSlots.length - 1];
-  const weaponPerk = lastSlot ? (selectedPerks[lastSlot.slot] ?? lastSlot.availablePerks[0] ?? null) : null;
+  const { buildSlots, weaponSlot } = splitPerkSlots(trap.perkSlots);
+  const weaponPerk = weaponSlot ? (selectedPerks[weaponSlot.slot] ?? weaponSlot.availablePerks[0] ?? null) : null;
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
@@ -274,8 +297,8 @@ export default function TrapPage() {
                     <TrapTierSelector trap={trap} tier={tier} level={level} offensive={offensive} onTierChange={setTier} onLevelChange={setLevel} onOffensiveChange={setOffensive} offensiveLocal={offensiveLocal} onOffensiveReset={resetOffensive} />
                     <TrapStatsColumn baseStats={baseStats} modifiedStats={modifiedStats} loading={statsLoading} />
                   </div>
-                  <BuildColumn slots={trap.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
-                  <EffectsColumn tierData={tierData} slots={trap.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={false} weaponPerk={weaponPerk} weaponPerkLevel={lastSlot?.unlockLevel} />
+                  <BuildColumn slots={buildSlots} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
+                  <EffectsColumn tierData={tierData} slots={buildSlots} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={false} weaponPerk={weaponPerk} weaponPerkLevel={weaponSlot?.unlockLevel} />
                 </div>
 
                 <div className="mx-6 w-px self-stretch bg-border/50" />
@@ -297,13 +320,13 @@ export default function TrapPage() {
                   <TabsTrigger value="info">Info</TabsTrigger>
                 </TabsList>
                 <TabsContent value="build">
-                  <BuildColumn slots={trap.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
+                  <BuildColumn slots={buildSlots} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
                 </TabsContent>
                 <TabsContent value="stats">
                   <TrapStatsColumn baseStats={baseStats} modifiedStats={modifiedStats} loading={statsLoading} />
                 </TabsContent>
                 <TabsContent value="effects">
-                  <EffectsColumn tierData={tierData} slots={trap.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={false} weaponPerk={weaponPerk} weaponPerkLevel={lastSlot?.unlockLevel} />
+                  <EffectsColumn tierData={tierData} slots={buildSlots} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={false} weaponPerk={weaponPerk} weaponPerkLevel={weaponSlot?.unlockLevel} />
                 </TabsContent>
                 <TabsContent value="info">
                   <TrapInfoColumn trap={trap} tierData={tierData} />
@@ -320,7 +343,7 @@ export default function TrapPage() {
             trap={trap}
             tierData={tierData}
             selectedPerks={selectedPerks}
-            slots={trap.perkSlots.slice(0, -1)}
+            slots={buildSlots}
             baseStats={baseStats}
             modifiedStats={modifiedStats}
             sharePath={buildSharePath()}

@@ -96,7 +96,7 @@ export default function StwProfilePage() {
     return (
       <SectionContainer className="flex flex-col items-center justify-center gap-6 py-40">
         <h1 className="font-burbank text-4xl uppercase text-foreground">Profil STW</h1>
-        <p className="text-muted-foreground">Ton compte STW n'est pas encore lie.</p>
+        <p className="text-muted-foreground">Ton compte STW n&apos;est pas encore lie.</p>
         {error && <p className="text-sm text-malus">{error}</p>}
         <Link
           href={`/${params.locale}/profile/stw/link`}

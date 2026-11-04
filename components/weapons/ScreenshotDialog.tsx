@@ -7,6 +7,7 @@ import type { CalculatedStats } from "@/lib/types/calculate"
 import { perkIcon, teamPerkIcon, UNKNOWN_ICON, weaponIconLarge } from "@/lib/cdn"
 import { RARITY_TEXT, STAT_MAX, formatStatName } from "@/lib/constants"
 import { formatNumber } from "@/lib/format"
+import { splitPerkSlots } from "@/lib/perks"
 import type { LoadoutHeroSlot, LoadoutTeamPerk } from "@/lib/loadout/store"
 import { qrUrl } from "@/lib/api/qr"
 import { FbcnLogo } from "@/components/svg/FbcnLogo"
@@ -384,8 +385,8 @@ function ScreenshotTemplateInner(
 
   const basicStatKeys = (isRanged ? RANGED_SCREENSHOT_STATS : MELEE_SCREENSHOT_STATS).filter((k) => k in baseRecord)
 
-  const lastSlot = weapon.perkSlots[weapon.perkSlots.length - 1]
-  const weaponPerk = lastSlot ? selectedPerks[lastSlot.slot] ?? lastSlot.availablePerks[0] : null
+  const { weaponSlot } = splitPerkSlots(weapon.perkSlots)
+  const weaponPerk = weaponSlot ? selectedPerks[weaponSlot.slot] ?? weaponSlot.availablePerks[0] : null
 
   const activePerks: { slot: PerkSlot; perk: Perk }[] = []
   for (const slot of slots) {
@@ -541,14 +542,14 @@ function ScreenshotTemplateInner(
                 <div className="overflow-hidden rounded-lg" style={{ border: "1px solid #4A2376", background: "rgba(49, 23, 79, 0.4)" }}>
                   <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: "1px solid #4A2376", background: "#31174F" }}>
                     <p className="text-lg font-semibold">Weapon Perk</p>
-                    {lastSlot && (
+                    {weaponSlot && (
                       <span className="text-[11px] font-medium uppercase tracking-wider" style={{ color: "#CAB0E8" }}>
-                        Lv.<span className="text-white">{lastSlot.unlockLevel}</span>
+                        Lv.<span className="text-white">{weaponSlot.unlockLevel}</span>
                       </span>
                     )}
                   </div>
                   <div className="px-5 py-4">
-                    <p className="text-lg font-bold uppercase leading-tight text-white">{weaponPerk.name}</p>
+                    {weaponPerk.name && <p className="text-lg font-bold uppercase leading-tight text-white">{weaponPerk.name}</p>}
                     <p className="mt-1.5 line-clamp-3 text-sm leading-snug" style={{ color: "#CAB0E8" }}>{weaponPerk.description}</p>
                   </div>
                 </div>
@@ -658,7 +659,7 @@ function ScreenshotTemplateInner(
                         <div key={slot.slot} className="px-5 py-3" style={{ borderBottom: "1px solid #4A2376" }}>
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-[11px] font-medium uppercase tracking-wider" style={{ color: "#CAB0E8" }}>
-                              Slot {slot.slot + 1} <span style={{ color: "#6E767A" }}>· Lv.{slot.unlockLevel}</span>
+                              Slot {slots.indexOf(slot) + 1} <span style={{ color: "#6E767A" }}>· Lv.{slot.unlockLevel}</span>
                             </p>
                             <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${tierColor}`} style={{ border: "1px solid currentColor" }}>
                               {perk.rarity}
