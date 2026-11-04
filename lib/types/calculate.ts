@@ -6,6 +6,7 @@ export interface CalculateHeroParams {
   commanderPerkId?: string
   supportPerkIds: string[]
   teamPerkIds: string[]
+  classPerkIds?: string[]
 }
 
 export interface CalculateParams {

@@ -15,6 +15,7 @@ import type { WeaponRef } from "@/lib/compare/useCompareSlot";
 import type { WeaponDetail, TierData, TierEntry, Perk } from "@/lib/types/weapon";
 import type { CalculatedStats } from "@/lib/types/calculate";
 import { isTierSplit } from "@/lib/types/weapon";
+import { splitPerkSlots } from "@/lib/perks";
 import { SectionContainer } from "@/components/public/SectionContainer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { WeaponHeader } from "@/components/weapons/WeaponHeader";
@@ -401,8 +402,8 @@ export default function WeaponPage() {
   const hasSplit = tierEntry ? isTierSplit(tierEntry) : false;
   const tierData: TierData | undefined = tierEntry ? (isTierSplit(tierEntry) ? tierEntry[material] : tierEntry) : undefined;
 
-  const lastSlot = weapon.perkSlots[weapon.perkSlots.length - 1];
-  const weaponPerk = lastSlot ? (selectedPerks[lastSlot.slot] ?? lastSlot.availablePerks[0] ?? null) : null;
+  const { buildSlots, weaponSlot } = splitPerkSlots(weapon.perkSlots);
+  const weaponPerk = weaponSlot ? (selectedPerks[weaponSlot.slot] ?? weaponSlot.availablePerks[0] ?? null) : null;
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
@@ -444,8 +445,8 @@ export default function WeaponPage() {
                     <TierSelector weapon={weapon} tier={tier} material={material} hasSplit={hasSplit} level={level} offensive={offensive} onTierChange={setTier} onMaterialChange={setMaterial} onLevelChange={setLevel} onOffensiveChange={setOffensive} />
                     <StatsColumn baseStats={baseStats} heroStats={heroStats} modifiedStats={modifiedStats} isRanged={isRanged} loading={statsLoading} />
                   </div>
-                  <BuildColumn slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
-                  <EffectsColumn tierData={tierData} slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={isRanged} weaponPerk={weaponPerk} weaponPerkLevel={lastSlot?.unlockLevel} />
+                  <BuildColumn slots={buildSlots} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
+                  <EffectsColumn tierData={tierData} slots={buildSlots} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={isRanged} weaponPerk={weaponPerk} weaponPerkLevel={weaponSlot?.unlockLevel} />
                 </div>
 
                 <div className="mx-6 w-px self-stretch bg-border/50" />
@@ -467,13 +468,13 @@ export default function WeaponPage() {
                   <TabsTrigger value="info">Info</TabsTrigger>
                 </TabsList>
                 <TabsContent value="build">
-                  <BuildColumn slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
+                  <BuildColumn slots={buildSlots} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
                 </TabsContent>
                 <TabsContent value="stats">
                   <StatsColumn baseStats={baseStats} modifiedStats={modifiedStats} isRanged={isRanged} loading={statsLoading} />
                 </TabsContent>
                 <TabsContent value="effects">
-                  <EffectsColumn tierData={tierData} slots={weapon.perkSlots.slice(0, -1)} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={isRanged} weaponPerk={weaponPerk} weaponPerkLevel={lastSlot?.unlockLevel} />
+                  <EffectsColumn tierData={tierData} slots={buildSlots} selectedPerks={selectedPerks} onPerkChange={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} isRanged={isRanged} weaponPerk={weaponPerk} weaponPerkLevel={weaponSlot?.unlockLevel} />
                 </TabsContent>
                 <TabsContent value="info">
                   <InfoColumn weapon={weapon} tierData={tierData} />
@@ -483,7 +484,7 @@ export default function WeaponPage() {
           </>
         )}
 
-        {weapon && tierData && <ScreenshotDialog open={screenshotOpen} onOpenChange={setScreenshotOpen} weapon={weapon} tierData={tierData} selectedPerks={selectedPerks} slots={weapon.perkSlots.slice(0, -1)} isRanged={isRanged} baseStats={baseStats} heroStats={heroStats} modifiedStats={modifiedStats} commander={loadoutCommander} support={loadoutSupport} teamPerks={loadoutTeamPerks} sharePath={buildSharePath()} />}
+        {weapon && tierData && <ScreenshotDialog open={screenshotOpen} onOpenChange={setScreenshotOpen} weapon={weapon} tierData={tierData} selectedPerks={selectedPerks} slots={buildSlots} isRanged={isRanged} baseStats={baseStats} heroStats={heroStats} modifiedStats={modifiedStats} commander={loadoutCommander} support={loadoutSupport} teamPerks={loadoutTeamPerks} sharePath={buildSharePath()} />}
       </SectionContainer>
     </TooltipProvider>
   );

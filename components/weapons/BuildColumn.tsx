@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { RotateCcw, ChevronDown } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { extractStatLabel } from "@/lib/perks"
+import { extractStatLabel, groupPerks } from "@/lib/perks"
 
 interface BuildColumnProps {
   slots: PerkSlot[]
@@ -14,21 +14,6 @@ interface BuildColumnProps {
   onSelect: (slot: number, perk: Perk | null) => void
   onHover: (perk: Perk | null) => void
   onResetAll: () => void
-}
-
-interface PerkGroup {
-  name: string
-  tiers: Perk[]
-}
-
-function groupPerks(perks: Perk[]): PerkGroup[] {
-  const map = new Map<string, Perk[]>()
-  for (const perk of perks) {
-    if (!perk.name) continue
-    if (!map.has(perk.name)) map.set(perk.name, [])
-    map.get(perk.name)!.push(perk)
-  }
-  return Array.from(map.entries()).map(([name, tiers]) => ({ name, tiers }))
 }
 
 export function BuildColumn({ slots, selectedPerks, onSelect, onHover, onResetAll }: BuildColumnProps) {
@@ -57,7 +42,7 @@ export function BuildColumn({ slots, selectedPerks, onSelect, onHover, onResetAl
       </div>
 
       <div className="divide-y divide-border/50">
-        {slots.map((slot) => {
+        {slots.map((slot, index) => {
           const selected = selectedPerks[slot.slot] ?? null
           const isOpen = openSlots.has(slot.slot)
           const groups = groupPerks(slot.availablePerks)
@@ -77,7 +62,7 @@ export function BuildColumn({ slots, selectedPerks, onSelect, onHover, onResetAl
                 <span className={`flex size-8 shrink-0 items-center justify-center text-sm font-bold tabular-nums ${
                   selected ? "bg-primary/20 text-foreground" : "border border-border/50 bg-card text-foreground"
                 }`}>
-                  {slot.slot + 1}
+                  {index + 1}
                 </span>
 
                 {/* Stat name du perk selectionne ou placeholder */}
