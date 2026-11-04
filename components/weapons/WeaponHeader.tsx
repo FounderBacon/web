@@ -1,6 +1,6 @@
 "use client"
 
-import { Camera, Check, QrCode, Share2 } from "lucide-react"
+import { Camera, Check, GitCompareArrows, QrCode, Share2 } from "lucide-react"
 import { useState } from "react"
 import { QrShareDialog } from "@/components/share/QrShareDialog"
 import { AssetImage } from "@/components/ui/asset-image"
@@ -18,9 +18,25 @@ interface WeaponHeaderProps {
   sharePath: string
   // URL absolue pour affichage + copy (https://...)
   shareUrl: string
+  onCompare: () => void
+  // Etat du comparateur, pour basculer le libelle du bouton.
+  inCompare: boolean
+  compareFull: boolean
+  compareCount: number
 }
 
-export function WeaponHeader({ weapon, onShare, copied, onScreenshot, sharePath, shareUrl }: WeaponHeaderProps) {
+export function WeaponHeader({
+  weapon,
+  onShare,
+  copied,
+  onScreenshot,
+  sharePath,
+  shareUrl,
+  onCompare,
+  inCompare,
+  compareFull,
+  compareCount,
+}: WeaponHeaderProps) {
   const rarityColor = RARITY_TEXT[weapon.rarity] ?? "text-muted-foreground"
   const isRanged = weapon.type === "ranged"
   const [qrOpen, setQrOpen] = useState(false)
@@ -53,6 +69,27 @@ export function WeaponHeader({ weapon, onShare, copied, onScreenshot, sharePath,
         </div>
 
         <div className="flex items-center gap-2.5">
+          <Button
+            size="xs"
+            variant={inCompare ? "default" : "outline"}
+            onClick={onCompare}
+            // Le comparateur plein n'accepte plus d'arme, sauf pour mettre a
+            // jour la config de celle qui y est deja.
+            disabled={compareFull && !inCompare}
+            title={
+              inCompare
+                ? "Update this weapon's build in the comparison"
+                : compareFull
+                  ? "Comparison is full — remove a weapon first"
+                  : "Add this weapon to the comparison"
+            }
+          >
+            {inCompare ? <Check className="size-3" /> : <GitCompareArrows className="size-3" />}
+            <span className="hidden sm:inline">
+              {inCompare ? "In compare" : "Compare"}
+              {compareCount > 0 && ` (${compareCount})`}
+            </span>
+          </Button>
           <Button size="xs" variant="outline" onClick={onShare}>
             {copied ? <Check className="size-3" /> : <Share2 className="size-3" />}
             <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
