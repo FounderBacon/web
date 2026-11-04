@@ -7,6 +7,7 @@ import { weaponIcon } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
 import { AssetImage } from "@/components/ui/asset-image"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useCompareT } from "@/lib/compare/i18n"
 import type { WeaponRef } from "@/lib/compare/useCompareSlot"
 
 interface PickerResult {
@@ -28,6 +29,7 @@ const SEARCH_DEBOUNCE_MS = 250
 const LIMIT_PER_TYPE = 12
 
 export function WeaponPicker({ open, onOpenChange, onSelect }: WeaponPickerProps) {
+  const t = useCompareT()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<PickerResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -79,26 +81,29 @@ export function WeaponPicker({ open, onOpenChange, onSelect }: WeaponPickerProps
     return () => clearTimeout(timer)
   }, [query, open])
 
-  // Reset a la fermeture pour repartir propre au prochain ouverture.
-  useEffect(() => {
-    if (!open) {
+  // Reset a la fermeture pour repartir propre a la prochaine ouverture. Fait
+  // ici plutot que dans un effet sur `open` : c'est la fermeture elle-meme qui
+  // est l'evenement, pas un etat a synchroniser apres coup.
+  function changeOpen(next: boolean) {
+    if (!next) {
       setQuery("")
       setResults([])
     }
-  }, [open])
+    onOpenChange(next)
+  }
 
   function handleSelect(item: PickerResult) {
     onSelect({ type: item.type, slug: item.slug })
-    onOpenChange(false)
+    changeOpen(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg gap-0 p-0">
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent className="max-w-lg gap-0 p-0 sm:max-w-lg">
         <DialogHeader className="border-b border-border/50 px-4 py-3">
-          <DialogTitle className="font-burbank text-sm uppercase tracking-wider">Select a weapon</DialogTitle>
+          <DialogTitle className="font-burbank text-sm uppercase tracking-wider">{t.pickerTitle}</DialogTitle>
           <DialogDescription className="sr-only">
-            Search for a ranged or melee weapon to add to the comparison.
+            {t.pickerDescription}
           </DialogDescription>
         </DialogHeader>
 
@@ -108,11 +113,11 @@ export function WeaponPicker({ open, onOpenChange, onSelect }: WeaponPickerProps
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search weapons..."
+            placeholder={t.pickerSearch}
             className="w-full bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
           {query && (
-            <button type="button" onClick={() => setQuery("")} aria-label="Clear search">
+            <button type="button" onClick={() => setQuery("")} aria-label={t.pickerClear}>
               <X className="size-4 text-muted-foreground transition-colors hover:text-foreground" />
             </button>
           )}
@@ -126,7 +131,7 @@ export function WeaponPicker({ open, onOpenChange, onSelect }: WeaponPickerProps
           )}
 
           {!loading && results.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">No weapon found.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">{t.pickerNone}</p>
           )}
 
           <div className="divide-y divide-border/30">

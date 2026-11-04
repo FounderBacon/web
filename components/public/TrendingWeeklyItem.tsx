@@ -14,9 +14,11 @@ interface TrendingWeeklyItemProps {
   bgClass: string;
   colorClass: string;
   subtype: string;
+  // "1 842 vues · 7 j", deja formate par le serveur.
+  viewsText?: string;
 }
 
-export function TrendingWeeklyItem({ item, href, bgClass, colorClass, subtype }: TrendingWeeklyItemProps) {
+export function TrendingWeeklyItem({ item, href, bgClass, colorClass, subtype, viewsText }: TrendingWeeklyItemProps) {
   const iconRef = useRef<ArrowRightIconHandle>(null);
 
   const inner = (
@@ -27,6 +29,7 @@ export function TrendingWeeklyItem({ item, href, bgClass, colorClass, subtype }:
         <span className="truncate text-base font-semibold text-primary-foreground">{item.name}</span>
         <span className="text-xs capitalize text-muted-foreground">{subtype}</span>
       </div>
+      {viewsText && <span className="relative hidden shrink-0 text-xs tabular-nums text-muted-foreground min-[360px]:block">{viewsText}</span>}
       <ArrowRightIcon ref={iconRef} className="relative shrink-0 text-primary-foreground" size={20} />
     </div>
   );

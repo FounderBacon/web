@@ -2,7 +2,7 @@ import type { CalculatedStats } from "@/lib/types/calculate"
 import { readStat } from "./stats"
 
 // ── Axes du radar ────────────────────────────────────────────────
-// Cinq axes lisibles d'un coup d'oeil. Chaque axe sait lire sa valeur
+// Quelques axes lisibles d'un coup d'oeil. Chaque axe sait lire sa valeur
 // depuis une arme ranged comme melee, sinon il est masque.
 
 export interface RadarAxis {
@@ -11,6 +11,8 @@ export interface RadarAxis {
   read: (stats: CalculatedStats) => number | null
   // Un axe "inverse" est meilleur quand la valeur brute est basse.
   inverted?: boolean
+  // Unite de la valeur brute, pour le tableau de valeurs sous le radar.
+  suffix?: string
 }
 
 // Cadence : firingRate pour le ranged, attackSpeed pour le melee.
@@ -28,9 +30,27 @@ function readAccuracy(stats: CalculatedStats): number | null {
   return readStat(stats, "spreadADS") ?? readStat(stats, "spread")
 }
 
+// Poids du crit dans le profil : le gain de degats moyen attendu des coups
+// critiques, soit la chance de crit appliquee a son multiplicateur.
+//
+// Ni l'une ni l'autre ne suffit seule : une chance de crit enorme sur un
+// multiplicateur faible ne vaut pas mieux qu'un multiplicateur enorme qui ne
+// se declenche jamais. Le radar n'avait aucun axe de crit, donc deux builds
+// qui ne differaient que par leur crit dessinaient presque la meme forme.
+//
+// Le resultat est un pourcentage lisible ("le crit ajoute ~11% en moyenne"),
+// pas un produit brut, parce que le tableau sous le radar affiche cette
+// valeur telle quelle.
+function readCrit(stats: CalculatedStats): number | null {
+  return readStat(stats, "critGain")
+}
+
 export const RADAR_AXES: RadarAxis[] = [
+  // DPS pondere par le crit : c'est la mesure qui decrit ce que l'arme fait
+  // vraiment, et elle est deja crit-inclusive cote API.
   { key: "dps", label: "DPS", read: (s) => readStat(s, "avgDps") ?? readStat(s, "dps") },
   { key: "damage", label: "Damage", read: (s) => readStat(s, "damage") },
+  { key: "crit", label: "Crit", read: readCrit, suffix: "%" },
   { key: "speed", label: "Speed", read: readSpeed },
   { key: "accuracy", label: "Accuracy", read: readAccuracy, inverted: true },
   { key: "range", label: "Range", read: readRange },

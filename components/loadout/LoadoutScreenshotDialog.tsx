@@ -177,7 +177,7 @@ export function LoadoutScreenshotDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
+      <DialogContent aria-describedby={undefined}
         showCloseButton={false}
         className="w-fit max-w-[calc(100%-1rem)] gap-0 overflow-hidden bg-king-900 p-3 sm:max-w-[95vw] sm:p-5"
       >

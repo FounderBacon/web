@@ -21,6 +21,7 @@ import { TrapStatsColumn } from "@/components/traps/TrapStatsColumn";
 import { TrapInfoColumn } from "@/components/traps/TrapInfoColumn";
 import { BuildColumn } from "@/components/weapons/BuildColumn";
 import { EffectsColumn } from "@/components/weapons/EffectsColumn";
+import { useOffensive } from "@/lib/loadout/useOffensive";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function TrapPage() {
@@ -40,10 +41,14 @@ export default function TrapPage() {
     const v = parseInt(initialParamsRef.current.l ?? "", 10);
     return isNaN(v) ? 0 : v;
   });
-  const [offensive, setOffensive] = useState(() => {
-    const v = parseInt(initialParamsRef.current.o ?? "", 10);
-    return isNaN(v) ? 0 : v;
-  });
+  // Offensive du profil par defaut ; `?o=` ou une saisie sur la fiche la rendent locale.
+  const {
+    offensive,
+    isLocal: offensiveLocal,
+    override: offensiveOverride,
+    setOffensive,
+    resetOffensive,
+  } = useOffensive(initialParamsRef.current.o);
   // Si l'URL contient level, on bypass le reset auto au mount (sinon le tier change le ramene au min)
   const levelFromUrlRef = useRef(!!initialParamsRef.current.l);
 
@@ -186,16 +191,20 @@ export default function TrapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- heroPayload est represente par heroKey
   }, [trap, tier, level, offensive, selectedPerks, params.slug, heroKey]);
 
-  // Construction des query params (utilisee par sync URL + share + QR)
-  const writeUrlParams = useCallback((url: URL) => {
+  // Construction des query params (utilisee par sync URL + share + QR).
+  //
+  // L'offensive ne va dans l'URL de la page que si elle est locale : sinon un
+  // simple rechargement la figerait a la valeur du profil du moment. Un lien
+  // partage, lui, porte la valeur appliquee, pour montrer les memes chiffres.
+  const writeUrlParams = useCallback((url: URL, forShare = false) => {
     url.search = "";
     url.searchParams.set("t", tier);
     for (const [slot, perk] of Object.entries(selectedPerks)) {
       if (perk) url.searchParams.set(`p${slot}`, perk.perkId);
     }
     if (level > 0) url.searchParams.set("l", String(level));
-    if (offensive > 0) url.searchParams.set("o", String(offensive));
-  }, [tier, selectedPerks, level, offensive]);
+    if (forShare ? offensive > 0 : offensiveOverride !== undefined) url.searchParams.set("o", String(offensive));
+  }, [tier, selectedPerks, level, offensive, offensiveOverride]);
 
   useEffect(() => {
     if (!trap) return;
@@ -206,7 +215,7 @@ export default function TrapPage() {
 
   const buildShareUrl = useCallback(() => {
     const url = new URL(window.location.href);
-    writeUrlParams(url);
+    writeUrlParams(url, true);
     return url.toString();
   }, [writeUrlParams]);
 
@@ -214,7 +223,7 @@ export default function TrapPage() {
   const buildSharePath = useCallback(() => {
     if (typeof window === "undefined") return "";
     const url = new URL(window.location.href);
-    writeUrlParams(url);
+    writeUrlParams(url, true);
     return url.pathname + url.search;
   }, [writeUrlParams]);
 
@@ -285,7 +294,7 @@ export default function TrapPage() {
               <div className="flex items-start gap-4">
                 <div className="grid min-w-0 flex-1 grid-cols-[3fr_3fr_3fr] items-start gap-4">
                   <div>
-                    <TrapTierSelector trap={trap} tier={tier} level={level} offensive={offensive} onTierChange={setTier} onLevelChange={setLevel} onOffensiveChange={setOffensive} />
+                    <TrapTierSelector trap={trap} tier={tier} level={level} offensive={offensive} onTierChange={setTier} onLevelChange={setLevel} onOffensiveChange={setOffensive} offensiveLocal={offensiveLocal} onOffensiveReset={resetOffensive} />
                     <TrapStatsColumn baseStats={baseStats} modifiedStats={modifiedStats} loading={statsLoading} />
                   </div>
                   <BuildColumn slots={buildSlots} selectedPerks={selectedPerks} onSelect={(slot, perk) => setSelectedPerks((prev) => ({ ...prev, [slot]: perk }))} onHover={setPreviewPerk} onResetAll={() => setSelectedPerks({})} />
@@ -302,7 +311,7 @@ export default function TrapPage() {
 
             {/* Mobile */}
             <div className="px-4 py-4 lg:hidden">
-              <TrapTierSelector trap={trap} tier={tier} level={level} offensive={offensive} onTierChange={setTier} onLevelChange={setLevel} onOffensiveChange={setOffensive} />
+              <TrapTierSelector trap={trap} tier={tier} level={level} offensive={offensive} onTierChange={setTier} onLevelChange={setLevel} onOffensiveChange={setOffensive} offensiveLocal={offensiveLocal} onOffensiveReset={resetOffensive} />
               <Tabs defaultValue="build" className="mt-3">
                 <TabsList variant="line" className="mb-4 w-full">
                   <TabsTrigger value="build">Build</TabsTrigger>

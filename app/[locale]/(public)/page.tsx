@@ -5,8 +5,9 @@ import { JsonLd } from "@/components/common/JsonLd";
 import { LandingPage } from "@/components/public/LandingPage";
 import { TrendingWeekly } from "@/components/public/TrendingWeekly";
 import { UpdatesSection } from "@/components/public/UpdatesSection";
-import { VentureDetails } from "@/components/public/VentureDetails";
+import { VentureDetails, type VentureUpdate } from "@/components/public/VentureDetails";
 import { SkeletonTrendingList, SkeletonUpdatesSection } from "@/components/ui/skeleton";
+import { entrySlug, fetchChangelog } from "@/lib/api/changelog";
 import { cleanVentureName, fetchCurrentVenture, type VentureWeek } from "@/lib/api/ventures";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { I18nText } from "@/lib/i18n-format";
@@ -67,12 +68,75 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     // fallback silencieux sur dict.home.seasonTitle
   }
 
+  // Dernieres versions de l'app, montrees dans le panneau venture. Un echec
+  // ne doit pas casser la home : le panneau s'affiche alors sans cette liste.
+  let updateItems: VentureUpdate[] = [];
+  try {
+    const res = await fetchChangelog({ limit: 2 });
+    const NEW_WINDOW_MS = 60 * 24 * 60 * 60 * 1000;
+    updateItems = res.data.map((entry, i) => ({
+      href: `/${locale}/changelog/${entrySlug(entry)}`,
+      version: entry.version,
+      title: entry.title,
+      badge: i === 0 && Date.now() - new Date(entry.releaseDate).getTime() < NEW_WINDOW_MS ? dict.home.newBadge : undefined,
+    }));
+  } catch {
+    // liste facultative
+  }
+  const venturePanelUpdates = {
+    label: dict.home.keyUpdates,
+    allLabel: dict.home.changelogLink,
+    allHref: `/${locale}/changelog`,
+    items: updateItems,
+  };
+  const compareCta = { href: `/${locale}/weapons/compare`, label: dict.home.compareCta };
+
   return (
     <>
       <JsonLd data={[websiteSchema(locale as Locale), softwareAppSchema(locale as Locale)]} />
       <h1 className="sr-only">{TITLE_BY_LOCALE[locale] ?? TITLE_BY_LOCALE.en}</h1>
-      <div className="relative w-full overflow-hidden md:h-[900px]">
-        <Image src="/image/bg_home.png" alt="" fill priority sizes="100vw" className="object-cover blur-sm" />
+      {/* Mobile : les armes d'abord (c'est ce qui montre que le site vit), puis
+          le panneau venture avec les dernieres versions. Le bloc suivant
+          (heros a deux colonnes) n'apparait qu'a partir de md. */}
+      <section className="relative overflow-hidden md:hidden">
+        <Image src="/image/bg_home.png" alt="" fill priority sizes="(max-width: 767px) 100vw, 1px" className="object-cover" />
+        <div className="absolute inset-0 bg-king-980/70" />
+        <div className="relative flex flex-col gap-5 px-4 pb-8 pt-6">
+          <div className="flex flex-col gap-3">
+            <p className="w-fit border border-king-700 bg-king-980/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary-foreground">
+              <I18nText text={dict.home.breadcrumb} />
+              {" "}
+              <span className="text-legendary">{ventureName ?? dict.home.seasonTitle}</span>
+            </p>
+            <h2 className="font-burbank text-4xl uppercase leading-none text-primary-foreground">{dict.home.trendingWeekly}</h2>
+          </div>
+          <Suspense fallback={<SkeletonTrendingList />}>
+            <TrendingWeekly
+              locale={locale as Locale}
+              variant="desktop"
+              ctaLabel={dict.home.exploreWeapons}
+              ctaHref={`/${locale}/search/weapons`}
+              viewsLabel={dict.home.viewsWeek}
+              viewsLabelOne={dict.home.viewsWeekOne}
+              secondaryCta={compareCta}
+            />
+          </Suspense>
+          {venture && (
+            <VentureDetails
+              venture={venture}
+              updates={venturePanelUpdates}
+              countdownLabels={{
+                rotatesIn: dict.home.ventureRotatesIn,
+                rotatingNow: dict.home.rotatingNow,
+                questlineEndsIn: dict.home.questlineEndsIn,
+                units: dict.home.countdownUnits,
+              }}
+            />
+          )}
+        </div>
+      </section>
+      <div className="relative hidden w-full overflow-hidden md:block md:h-[900px]">
+        <Image src="/image/bg_home.png" alt="" fill priority sizes="(min-width: 768px) 100vw, 1px" className="object-cover blur-sm" />
         <div className="absolute inset-0 bg-king-800/10" />
         <div className="relative md:absolute md:inset-0">
           <div className="grid grid-cols-1 gap-8 px-5 py-8 sm:px-8 md:h-full md:grid-cols-2 md:gap-6 md:px-12 md:py-12 lg:gap-8 lg:px-24 lg:py-14 xl:px-48 xl:py-16">
@@ -88,14 +152,26 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               <p className="text-balance font-burbank text-4xl uppercase leading-[0.95] text-primary-foreground sm:text-5xl md:text-5xl lg:text-6xl xl:text-7xl">{ventureName ?? dict.home.seasonTitle}</p>
             </div>
 
-            <div className="order-2 flex flex-col md:order-0 md:col-start-2 md:row-span-2 md:row-start-1 md:h-full md:justify-center">
-              {venture && <VentureDetails venture={venture} />}
+            <div className="order-2 flex flex-col md:order-0 md:col-start-2 md:row-span-2 md:row-start-1 md:h-full md:items-center md:justify-center">
+              {venture && (
+                <VentureDetails
+                  venture={venture}
+                  updates={venturePanelUpdates}
+                  countdownLabels={{
+                    rotatesIn: dict.home.ventureRotatesIn,
+                    rotatingNow: dict.home.rotatingNow,
+                    questlineEndsIn: dict.home.questlineEndsIn,
+                    units: dict.home.countdownUnits,
+                  }}
+                />
+              )}
             </div>
 
             <div className="order-3 md:order-0 md:col-start-1 md:row-start-2 md:self-start">
               <h2 className="mb-4 font-burbank text-2xl uppercase leading-none text-primary-foreground md:mb-5 md:text-3xl">{dict.home.trendingWeekly}</h2>
               <Suspense fallback={<SkeletonTrendingList />}>
-                <TrendingWeekly locale={locale as Locale} ctaLabel={dict.home.browseAll} ctaHref={`/${locale}/search`} />
+                <TrendingWeekly locale={locale as Locale} variant="desktop" ctaLabel={dict.home.browseAll} ctaHref={`/${locale}/search`} viewsLabel={dict.home.viewsWeek}
+              viewsLabelOne={dict.home.viewsWeekOne} secondaryCta={compareCta} />
               </Suspense>
             </div>
           </div>
@@ -107,7 +183,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </p>
       </div>
       <Suspense fallback={<SkeletonUpdatesSection />}>
-        <UpdatesSection locale={locale as Locale} />
+        <UpdatesSection locale={locale as Locale} labels={{ whatsNew: dict.home.whatsNew, changelog: dict.home.changelogLink }} />
       </Suspense>
     </>
   );

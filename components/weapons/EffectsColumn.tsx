@@ -4,7 +4,6 @@ import type { TierData, Perk, PerkSlot } from "@/lib/types/weapon"
 import { useCallback, useRef, useState } from "react"
 import { Separator } from "@/components/ui/separator"
 import { RARITY_TEXT } from "@/lib/constants"
-import { HeroBonusSection } from "@/components/weapons/HeroBonusSection"
 import { groupPerks, type PerkGroup } from "@/lib/perks"
 
 interface EffectsColumnProps {
@@ -15,6 +14,9 @@ interface EffectsColumnProps {
   isRanged: boolean
   weaponPerk?: Perk | null
   weaponPerkLevel?: number
+  // Bloc du loadout de heros. Fourni par la fiche d'arme seulement : le calcul
+  // des pieges n'applique pas encore les heros, l'afficher y serait trompeur.
+  heroBonus?: React.ReactNode
 }
 
 export function EffectsColumn({
@@ -25,6 +27,7 @@ export function EffectsColumn({
   isRanged,
   weaponPerk,
   weaponPerkLevel,
+  heroBonus,
 }: EffectsColumnProps) {
   // Construire la liste des perks actifs avec leur slot pour retrouver le groupe
   const activeEntries: { slot: PerkSlot; perk: Perk; group: PerkGroup }[] = []
@@ -97,8 +100,7 @@ export function EffectsColumn({
         </div>
       )}
 
-      {/* Hero loadout actif (commander + support + team perks) */}
-      <HeroBonusSection />
+      {heroBonus}
     </div>
   )
 }

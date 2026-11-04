@@ -21,6 +21,7 @@ import { RANGED_CATEGORIES, MELEE_CATEGORIES, RARITIES_VISIBLE, RARITY_TEXT, RAR
 import { formatInt } from "@/lib/format";
 import { SkeletonWeaponGrid } from "@/components/ui/skeleton";
 import { FanCard, type FanVariant } from "@/components/public/FanCard";
+import { CompareToggle } from "@/components/weapons/compare/CompareToggle";
 
 type WeaponType = "ranged" | "melee";
 type AnyWeaponGrouped = RangedWeaponGroupedSummary | MeleeWeaponGroupedSummary;
@@ -244,24 +245,34 @@ export function SearchView({ dict, locale }: SearchViewProps) {
                   iconUrl: v.iconUrl,
                 }));
                 return (
-                  <FanCard
-                    key={weapon.baseSlug}
+                  // Le bouton est frere de la carte (elle est un lien) et
+                  // pose en coin, sous la pastille de rarete. z-10 : au-dessus
+                  // de la carte au repos, sous l'eventail quand il s'ouvre.
+                  <div key={weapon.baseSlug} className="relative">
+                    <FanCard
+                      name={weapon.name}
+                      maxRarity={weapon.maxRarity}
+                      mainIconUrl={mainVariant.iconUrl}
+                      variants={fanVariants}
+                      subtitle={
+                        <>
+                          <span className="truncate">{weapon.category}</span>
+                          {weapon.element && weapon.element !== "physical" && (
+                            <>
+                              <span className="text-border">·</span>
+                              <span className="truncate capitalize">{weapon.element}</span>
+                            </>
+                          )}
+                        </>
+                      }
+                    />
+                  <CompareToggle
+                    weaponRef={{ type, slug: mainVariant.slug }}
                     name={weapon.name}
-                    maxRarity={weapon.maxRarity}
-                    mainIconUrl={mainVariant.iconUrl}
-                    variants={fanVariants}
-                    subtitle={
-                      <>
-                        <span className="truncate">{weapon.category}</span>
-                        {weapon.element && weapon.element !== "physical" && (
-                          <>
-                            <span className="text-border">·</span>
-                            <span className="truncate capitalize">{weapon.element}</span>
-                          </>
-                        )}
-                      </>
-                    }
+                    rarity={mainVariant.rarity}
+                    className="absolute right-1.5 top-6 z-10"
                   />
+                  </div>
                 );
               })}
             </div>

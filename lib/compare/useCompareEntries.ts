@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react"
 import { fetchRangedWeapon, fetchMeleeWeapon, calculateWeaponStats } from "@/lib/api/weapons"
-import type { WeaponDetail } from "@/lib/types/weapon"
+import { isTierSplit, type WeaponDetail } from "@/lib/types/weapon"
 import type { CalculatedStats } from "@/lib/types/calculate"
 import type { LoadoutApiPayload } from "@/lib/loadout/selectors"
 import type { CompareEntry } from "./store"
+import { effectiveHeroPayload, withHeroGain } from "./hero"
 import { serializeWeaponRef } from "./useCompareSlot"
 
 export interface ResolvedEntry {
@@ -25,6 +26,8 @@ export function useCompareEntries(
   entries: CompareEntry[],
   heroPayload: LoadoutApiPayload | undefined,
   enabled = true,
+  // Offensive du profil, appliquee aux entrees qui n'en fixent pas.
+  profileOffensive = 0,
 ): { resolved: ResolvedEntry[]; loading: boolean } {
   const [resolved, setResolved] = useState<ResolvedEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -61,15 +64,29 @@ export function useCompareEntries(
           const tier = init.tier && weapon.tiers[init.tier] ? init.tier : Object.keys(weapon.tiers)[0]
           if (!tier) return { entry, weapon, stats: null }
 
-          const res = await calculateWeaponStats(ref.type, ref.slug, {
+          const material = init.material ?? "ore"
+          // Sans level enregistre (arme ajoutee depuis une liste), la page
+          // compare retombe sur le minimum du tier ; sans le meme repli ici,
+          // le modal et la page affichaient deux valeurs pour la meme colonne.
+          const tierEntry = weapon.tiers[tier]
+          const tierData = tierEntry && isTierSplit(tierEntry) ? tierEntry[material] : tierEntry
+          const level = init.level ?? tierData?.levelRange?.min ?? 0
+
+          const params = {
             tier,
-            material: init.material ?? "ore",
-            level: init.level ?? 0,
-            offensive: init.offensive ?? 0,
+            material,
+            level,
+            offensive: init.offensive ?? profileOffensive,
             perkIds: init.perkIds?.filter(Boolean) ?? [],
-            ...(heroPayload && { hero: heroPayload }),
-          })
-          return { entry, weapon, stats: res.stats }
+          }
+          // Le loadout de la colonne, sinon celui de l'utilisateur. Avec un
+          // heros, un second calcul sans lui donne le gain de DPS.
+          const hero = effectiveHeroPayload(init.hero, heroPayload)
+          const [res, base] = await Promise.all([
+            calculateWeaponStats(ref.type, ref.slug, { ...params, ...(hero && { hero }) }),
+            hero ? calculateWeaponStats(ref.type, ref.slug, params) : Promise.resolve(null),
+          ])
+          return { entry, weapon, stats: withHeroGain(res.stats, base?.stats ?? null) }
         } catch {
           // Une arme en echec n'empeche pas d'afficher les autres colonnes.
           return { entry, weapon: null, stats: null }
@@ -87,7 +104,7 @@ export function useCompareEntries(
     return () => controller.abort()
     // key/heroKey serialisent les entrees : evite un refetch a chaque rendu.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, heroKey, enabled])
+  }, [key, heroKey, enabled, profileOffensive])
 
   return { resolved, loading }
 }
