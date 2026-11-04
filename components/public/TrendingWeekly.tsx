@@ -66,6 +66,7 @@ export interface TrendingItemProps {
   bgClass: string
   colorClass: string
   subtype: string
+  viewsText?: string
 }
 
 interface TrendingWeeklyProps {
@@ -76,6 +77,12 @@ interface TrendingWeeklyProps {
   // "desktop" : liste verticale, le titre est pose par la page.
   variant?: "mobile" | "desktop"
   title?: string
+  // Modele du compteur de vues ("{count} vues · 7 j"). Absent : pas de compteur.
+  viewsLabel?: string
+  // Meme modele au singulier ("1 vue").
+  viewsLabelOne?: string
+  // Second bouton sous la liste (comparateur).
+  secondaryCta?: { href: string; label: string }
 }
 
 // Carte compacte du defilement mobile.
@@ -110,7 +117,7 @@ function TrendingMobileCard({ item, href, subtype }: TrendingItemProps) {
   );
 }
 
-export async function TrendingWeekly({ locale, ctaLabel, ctaHref, variant = "desktop", title }: TrendingWeeklyProps) {
+export async function TrendingWeekly({ locale, ctaLabel, ctaHref, variant = "desktop", title, viewsLabel, viewsLabelOne, secondaryCta }: TrendingWeeklyProps) {
   let items: PopularGlobalItem[] = [];
   let failed = false;
   try {
@@ -155,6 +162,12 @@ export async function TrendingWeekly({ locale, ctaLabel, ctaHref, variant = "des
     colorClass: (item.rarity && RARITY_DECO[item.rarity]) ?? "text-primary",
     bgClass: (item.rarity && RARITY_BG_DARK[item.rarity]) ?? "bg-king-800/65 hover:bg-king-800",
     subtype: entitySubtype(item),
+    viewsText: viewsLabel
+      ? (item.views === 1 && viewsLabelOne ? viewsLabelOne : viewsLabel).replace(
+          "{count}",
+          item.views.toLocaleString(locale === "fr" ? "fr-FR" : "en-US"),
+        )
+      : undefined,
   }));
 
   if (variant === "mobile") {
@@ -187,7 +200,17 @@ export async function TrendingWeekly({ locale, ctaLabel, ctaHref, variant = "des
         ))}
       </ul>
 
-      <TrendingCTA href={ctaHref} label={ctaLabel} />
+      <div className="flex max-w-lg flex-col gap-2 sm:flex-row">
+        <TrendingCTA href={ctaHref} label={ctaLabel} />
+        {secondaryCta && (
+          <Link
+            href={secondaryCta.href}
+            className="flex w-full items-center justify-between gap-3 border border-primary/60 bg-primary/15 px-4 py-3 text-sm font-medium uppercase tracking-wide text-primary-foreground backdrop-blur-sm transition-colors hover:bg-primary/30"
+          >
+            <span>{secondaryCta.label}</span>
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

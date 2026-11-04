@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { GitCompareArrows, PackageOpen, Shield, SlidersHorizontal, X } from "lucide-react"
 import { AssetImage } from "@/components/ui/asset-image"
@@ -8,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { weaponIcon, type AssetCategory } from "@/lib/cdn"
 import { RARITY_TEXT } from "@/lib/constants"
+import { bestColumnIndex } from "@/lib/compare/best"
 import { useCompare, MAX_COMPARE, SERIES_COLORS } from "@/lib/compare/store"
 import { compareGridVars, CMP_ROW, CMP_VALUES } from "@/lib/compare/grid"
 import { perkSummary, resolvePerks } from "@/lib/compare/summary"
@@ -48,12 +50,14 @@ function ColumnHeader({
   locale,
   onRemove,
   onNavigate,
+  isBest,
 }: {
   item: ResolvedEntry
   color: string
   locale: string
   onRemove: () => void
   onNavigate: () => void
+  isBest?: boolean
 }) {
   const t = useCompareT()
   const { entry, weapon } = item
@@ -80,6 +84,12 @@ function ColumnHeader({
   return (
     <div className="group/col relative flex h-full flex-col items-center gap-1 px-1 pb-2.5 pt-3 text-center md:px-2">
       <div className="absolute inset-x-0 top-0 h-0.5" style={{ backgroundColor: color }} aria-hidden />
+
+      {isBest && (
+        <span className="absolute left-0 top-1.5 bg-uncommon px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-background">
+          {t.bestBadge}
+        </span>
+      )}
 
       {/* Retrait discret : revele au survol sur desktop, toujours present au
           doigt — un controle qui n'apparait qu'au hover est inatteignable
@@ -203,6 +213,9 @@ export function CompareQuickEdit({ open, onOpenChange, locale }: CompareQuickEdi
   const columns = resolved.map((r) => r.stats)
   const names = resolved.map((r) => r.weapon?.name ?? r.entry.name ?? null)
   const hasStats = columns.some((c) => c !== null)
+  const bestColumn = bestColumnIndex(columns)
+  // Masque les lignes de stats identiques sur toutes les colonnes.
+  const [onlyDifferences, setOnlyDifferences] = useState(false)
 
   return (
     // Infobulles des en-tetes (heros) comme du tableau : un seul provider,
@@ -250,6 +263,7 @@ export function CompareQuickEdit({ open, onOpenChange, locale }: CompareQuickEdi
                       locale={locale}
                       onRemove={() => removeAt(i)}
                       onNavigate={() => onOpenChange(false)}
+                      isBest={i === bestColumn}
                     />
                   </div>
                 ))}
@@ -277,16 +291,27 @@ export function CompareQuickEdit({ open, onOpenChange, locale }: CompareQuickEdi
                 {/* Sans cadre ni marge : le tableau est le contenu de la modal,
                     l'encadrer dedans faisait une boite dans une boite et
                     rognait la largeur utile des colonnes. */}
-                <CompareStatsTable columns={columns} names={names} colors={SERIES_COLORS} bordered={false} />
+                <CompareStatsTable columns={columns} names={names} colors={SERIES_COLORS} bordered={false} onlyDifferences={onlyDifferences} />
               </>
             )}
           </div>
         </div>
 
         <div className="z-10 flex shrink-0 items-center justify-between gap-2 border-t border-border/50 bg-card px-4 py-3 shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.5)]">
-          <Button size="xs" variant="ghost" onClick={clear} disabled={entries.length === 0}>
-            {t.clearAll}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button size="xs" variant="ghost" onClick={clear} disabled={entries.length === 0}>
+              {t.clearAll}
+            </Button>
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={onlyDifferences}
+                onChange={(e) => setOnlyDifferences(e.target.checked)}
+                className="size-3.5 accent-primary"
+              />
+              {t.onlyDifferences}
+            </label>
+          </div>
           <Button size="xs" asChild>
             <Link href={`/${locale}/weapons/compare`} onClick={() => onOpenChange(false)}>
               <GitCompareArrows className="size-3" />

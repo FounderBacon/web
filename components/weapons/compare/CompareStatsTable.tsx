@@ -1,7 +1,8 @@
 "use client"
 
+import { Star } from "lucide-react"
 import type { CalculatedStats } from "@/lib/types/calculate"
-import { barRatios, buildComparison, isLowerBetter, COMPARE_STAT_DESC, type StatDelta } from "@/lib/compare/stats"
+import { barRatios, buildComparison, COMPARE_STAT_DESC, type StatDelta } from "@/lib/compare/stats"
 import { buildVerdict, type ColumnVerdict } from "@/lib/compare/verdict"
 import { CMP_ROW, CMP_VALUES } from "@/lib/compare/grid"
 import { formatStatName, STAT_DESC } from "@/lib/constants"
@@ -20,6 +21,8 @@ interface CompareStatsTableProps {
   // Faux quand le tableau est deja le contenu d'un cadre — la modal — ou un
   // encadrement de plus ferait une boite dans une boite.
   bordered?: boolean
+  // Masque les lignes ou toutes les colonnes ont la meme valeur.
+  onlyDifferences?: boolean
 }
 
 // Un ecart sous ce seuil n'est pas signale : bruit d'arrondi cote API.
@@ -31,22 +34,30 @@ function winnerTint(color: string | undefined): string | undefined {
   return /^#[0-9a-f]{6}$/i.test(color ?? "") ? `${color}14` : undefined
 }
 
+/**
+ * Ecart a la MEILLEURE valeur de la ligne (et non plus a la premiere colonne) :
+ * la cellule gagnante n'en porte pas, les autres disent ce qu'il leur manque.
+ */
 function DeltaBadge({ row, index }: { row: StatDelta; index: number }) {
-  const percent = row.percentFromFirst[index]
-  if (percent === null || Math.abs(percent) < NEGLIGIBLE_PERCENT) return null
+  const t = useCompareT()
+  if (row.bestIndex === null) return null
+  const value = row.values[index]
+  const best = row.values[row.bestIndex]
+  if (value === null || best === null || best === 0 || value === best) return null
 
-  // Un ecart negatif est un gain quand la stat est meilleure basse.
-  const isGain = isLowerBetter(row.key) ? percent < 0 : percent > 0
-  const sign = percent > 0 ? "+" : ""
+  const percent = ((value - best) / Math.abs(best)) * 100
+  if (Math.abs(percent) < NEGLIGIBLE_PERCENT) return null
+
+  const sign = percent > 0 ? "+" : "\u2212"
 
   return (
     <span
-      className={`shrink-0 text-[9px] tabular-nums md:text-[10px] ${
-        isGain ? "text-uncommon-dark dark:text-uncommon" : "text-malus-dark dark:text-malus"
-      }`}
+      className="shrink-0 text-[9px] tabular-nums text-malus-dark md:text-[10px] dark:text-malus"
+      title={t.vsBest}
     >
       {sign}
-      {percent.toFixed(1)}%
+      {Math.abs(percent).toFixed(0)}%
+      <span className="hidden lg:inline"> {t.vsBest}</span>
     </span>
   )
 }
@@ -74,12 +85,15 @@ function ValueCell({
   // a quatre chiffres et son ecart en pourcent ne tiennent plus cote a cote.
   tight: boolean
 }) {
+  const t = useCompareT()
   const value = row.values[index]
   // Egalite en tete : toutes les colonnes qui portent la meilleure valeur sont
   // marquees, pas seulement la premiere trouvee — sinon deux armes a 75% de
   // multiplicateur critique s'affichent comme si l'une battait l'autre.
   const best = row.bestIndex === null ? null : row.values[row.bestIndex]
-  const isBest = best !== null && value === best
+  // Pas d'etoile quand toutes les colonnes sont a egalite : rien n'est "meilleur".
+  const isTie = row.values.every((v) => v === row.values[0])
+  const isBest = best !== null && value === best && !isTie
 
   return (
     <div
@@ -101,7 +115,14 @@ function ValueCell({
         >
           {value === null ? "—" : `${formatStat(value)}${row.suffix}`}
         </span>
-        {index > 0 && <DeltaBadge row={row} index={index} />}
+        {isBest ? (
+          <span className="flex shrink-0 items-center gap-1 text-[9px] font-medium text-uncommon-dark md:text-[10px] dark:text-uncommon">
+            <Star className="size-2.5 fill-current" aria-hidden />
+            <span className="hidden lg:inline">{t.bestLabel}</span>
+          </span>
+        ) : (
+          <DeltaBadge row={row} index={index} />
+        )}
       </div>
 
       {ratio !== null && (
@@ -248,9 +269,14 @@ function StatRow({ row, colors, tight }: { row: StatDelta; colors?: string[]; ti
  * afficher un second ici dupliquait la meme information et, une fois colle
  * dans un conteneur scrollable, se chevauchait avec le premier.
  */
-export function CompareStatsTable({ columns, names, colors, bordered = true }: CompareStatsTableProps) {
+export function CompareStatsTable({ columns, names, colors, bordered = true, onlyDifferences = false }: CompareStatsTableProps) {
   const t = useCompareT()
-  const groups = buildComparison(columns, formatStatName)
+  const allGroups = buildComparison(columns, formatStatName)
+  const groups = onlyDifferences
+    ? allGroups
+        .map((g) => ({ ...g, rows: g.rows.filter((r) => !r.values.every((v) => v === r.values[0])) }))
+        .filter((g) => g.rows.length > 0)
+    : allGroups
   const verdict = buildVerdict(groups, columns.length)
   const tight = columns.length >= 4
 
@@ -297,7 +323,7 @@ export function CompareStatsTable({ columns, names, colors, bordered = true }: C
                   return (
                     <span className="flex min-w-0 items-center gap-1.5 font-sans text-[10px] normal-case tracking-normal text-muted-foreground">
                       <span
-                        className="size-2 shrink-0 rounded-full"
+                        className="size-2 shrink-0"
                         style={{ backgroundColor: colors?.[leader] }}
                         aria-hidden
                       />

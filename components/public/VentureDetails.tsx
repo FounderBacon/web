@@ -1,9 +1,21 @@
+import Link from "next/link";
 import { VentureCountdownBlocks } from "@/components/public/VentureCountdownBlocks";
 import { parseVentureSeason, ventureEndDate, type VentureWeek } from "@/lib/api/ventures";
+
+export interface VentureUpdate {
+  href: string;
+  version: string;
+  title: string;
+  // Pastille facultative ("Nouveau" sur la derniere version).
+  badge?: string;
+}
 
 interface VentureDetailsProps {
   venture: VentureWeek;
   title?: string;
+  // Dernieres versions de l'app, sous le compte a rebours : le panneau ne
+  // dit plus seulement ce que fait le jeu, mais aussi ce que fait le site.
+  updates?: { label: string; allLabel: string; allHref: string; items: VentureUpdate[] };
   countdownLabels: {
     rotatesIn: string;
     rotatingNow: string;
@@ -34,7 +46,7 @@ const ELEMENT_DOT: Record<string, string> = {
  * empilait cinq lignes de meme poids, ou le compte a rebours — l'information
  * qui change — se perdait parmi les libelles fixes.
  */
-export function VentureDetails({ venture, title = "Venture info", countdownLabels }: VentureDetailsProps) {
+export function VentureDetails({ venture, title = "Venture info", countdownLabels, updates }: VentureDetailsProps) {
   const season = venture.venturesSeason;
   // Pas de saison : on peut quand meme avoir des echeances a afficher
   const parsed = season ? parseVentureSeason(season.raw) : null;
@@ -91,6 +103,30 @@ export function VentureDetails({ venture, title = "Venture info", countdownLabel
           <VentureCountdownBlocks rotatesAt={rotatesAt?.toISOString() ?? null} questlineEndsAt={questlineEnd} labels={countdownLabels} tone="panel" />
         )}
       </div>
+
+      {updates && updates.items.length > 0 && (
+        <div className="border-t border-foreground/10 bg-king-700/40">
+          <div className="flex items-center justify-between gap-3 bg-king-700/60 px-6 py-2.5 lg:px-7">
+            <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary-foreground">{updates.label}</h3>
+            <Link href={updates.allHref} className="text-[11px] font-medium text-primary transition-colors hover:text-primary/80">
+              {updates.allLabel}
+            </Link>
+          </div>
+          <ul>
+            {updates.items.map((u) => (
+              <li key={u.href} className="border-t border-foreground/10 first:border-t-0">
+                <Link href={u.href} className="flex items-center gap-3 px-6 py-3 transition-colors hover:bg-king-700/60 lg:px-7">
+                  <span className="shrink-0 border border-primary/60 px-2 py-0.5 text-[11px] font-bold text-primary">v{u.version}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-primary-foreground">{u.title}</span>
+                  {u.badge && (
+                    <span className="shrink-0 bg-legendary px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-king-980">{u.badge}</span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

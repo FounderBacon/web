@@ -30,7 +30,7 @@ export function CompareBar() {
         >
           <GitCompareArrows className="size-4" />
           {t.bar}
-          <span className="flex size-5 items-center justify-center rounded-full bg-primary-foreground text-xs font-bold text-primary">
+          <span className="flex size-5 items-center justify-center bg-primary-foreground text-xs font-bold text-primary">
             {count}
           </span>
         </Button>

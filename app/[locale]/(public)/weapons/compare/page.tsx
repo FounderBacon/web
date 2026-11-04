@@ -17,6 +17,7 @@ import {
   type WeaponRef,
   type CompareSlotInit,
 } from "@/lib/compare/useCompareSlot"
+import { bestColumnIndex } from "@/lib/compare/best"
 import { useCompare, MAX_COMPARE, SERIES_COLORS, type CompareEntry } from "@/lib/compare/store"
 import { compareGridVars, CMP_ROW, CMP_VALUES, CMP_STICKY_TOP } from "@/lib/compare/grid"
 import { useCompareT } from "@/lib/compare/i18n"
@@ -106,6 +107,8 @@ export default function WeaponComparePage() {
   // l'etat initial est le meme cote serveur et cote client, donc pas de
   // divergence d'hydratation.
   const [radarOpen, setRadarOpen] = useState(false)
+  // Masque les lignes de stats identiques sur toutes les colonnes.
+  const [onlyDifferences, setOnlyDifferences] = useState(false)
 
   // Le loadout est partage par toutes les colonnes : c'est la condition
   // pour que la comparaison reste valide.
@@ -274,6 +277,9 @@ export default function WeaponComparePage() {
   const hasAnyWeapon = active.some((s) => s.weapon !== null)
   const comparableCount = active.filter((s) => s.stats !== null).length
 
+  // Colonne au meilleur score du verdict, seulement si elle est seule en tete.
+  const bestColumn = bestColumnIndex(statColumns)
+
   return (
     <TooltipProvider delayDuration={200}>
       <SectionContainer className="min-h-screen">
@@ -293,6 +299,15 @@ export default function WeaponComparePage() {
                 reduits a une icone de 12px etaient indevinables, et l'un
                 d'eux efface la comparaison. */}
             <div className="flex flex-wrap items-center gap-2">
+              <label className="flex cursor-pointer items-center gap-2 pr-1 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={onlyDifferences}
+                  onChange={(e) => setOnlyDifferences(e.target.checked)}
+                  className="size-3.5 accent-primary"
+                />
+                {t.onlyDifferences}
+              </label>
               {visibleCount < MAX_COMPARE && (
                 <Button size="xs" variant="outline" onClick={() =>
                     // Depuis le nombre affiche : des colonnes restaurees du
@@ -329,7 +344,7 @@ export default function WeaponComparePage() {
           {/* xl:grid-cols n'apparait qu'avec un radar a afficher a cote : sinon
               une seule colonne, pleine largeur, pour les colonnes + le tableau. */}
           <div
-            className={`grid gap-5 ${comparableCount >= 2 ? "xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)] xl:items-start" : ""}`}
+            className={`grid gap-5 ${comparableCount >= 2 ? "xl:grid-cols-[minmax(0,480px)_minmax(0,1fr)] xl:items-start" : ""}`}
           >
             {comparableCount >= 2 && (
               // Colle sous la navbar en xl : le tableau de stats est bien plus
@@ -394,6 +409,7 @@ export default function WeaponComparePage() {
                           if (i >= 2) setExtraColumns(Math.max(0, visibleCount - 1 - 2))
                         }}
                         removable={i >= 2}
+                        isBest={i === bestColumn}
                         // Remplir une colonne avant les precedentes desynchronise sa
                         // position du store (qui compacte par ordre de remplissage).
                         locked={i > 0 && refs[i - 1] === null}
@@ -404,7 +420,7 @@ export default function WeaponComparePage() {
               </div>
 
               {comparableCount >= 2 ? (
-                <CompareStatsTable columns={statColumns} names={names} colors={SERIES_COLORS} />
+                <CompareStatsTable columns={statColumns} names={names} colors={SERIES_COLORS} onlyDifferences={onlyDifferences} />
               ) : (
                 <div className="border border-dashed border-border/60 px-6 py-12 text-center">
                   <p className="text-sm text-muted-foreground">

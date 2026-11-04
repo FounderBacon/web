@@ -73,7 +73,7 @@ export function CompareToggle({ weaponRef, name, rarity, className = "" }: Compa
     >
       {inCompare ? <Check className="size-3.5" /> : <GitCompareArrows className="size-3.5" />}
       {several && (
-        <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-background text-[9px] font-bold text-foreground">
+        <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center bg-background text-[9px] font-bold text-foreground">
           {indexes.length}
         </span>
       )}

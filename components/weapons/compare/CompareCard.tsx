@@ -30,6 +30,8 @@ interface CompareCardProps {
   // entrees par ordre de remplissage, donc remplir la 3e avant la 2e fait
   // apparaitre l'arme dans la mauvaise colonne au rechargement de la page.
   locked?: boolean
+  // Colonne au meilleur score du verdict : badge "Meilleur" en haut de la carte.
+  isBest?: boolean
 }
 
 /**
@@ -43,7 +45,7 @@ interface CompareCardProps {
  * telephone) comme a ~280px sur desktop : le detail (rarete, categorie, lien
  * d'edition) n'apparait qu'a partir de md, ou il y a la place pour lui.
  */
-export function CompareCard({ slot, color, locale, onPick, onClear, onHeroChange, removable, locked }: CompareCardProps) {
+export function CompareCard({ slot, color, locale, onPick, onClear, onHeroChange, removable, locked, isBest }: CompareCardProps) {
   const t = useCompareT()
   const [pickerOpen, setPickerOpen] = useState(false)
   const { weapon } = slot
@@ -97,6 +99,12 @@ export function CompareCard({ slot, color, locale, onPick, onClear, onHeroChange
       {/* Barre de couleur : c'est elle qu'on retrouve sur chaque barre de
           magnitude du tableau, donc le lien entre une colonne et ses valeurs. */}
       <div className="absolute inset-x-0 top-0 h-0.5" style={{ backgroundColor: color }} aria-hidden />
+
+      {isBest && (
+        <span className="absolute left-0 top-1.5 bg-uncommon px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-background md:text-[10px]">
+          {t.bestBadge}
+        </span>
+      )}
 
       {/* Actions discretes : visibles au survol sur desktop, toujours la au
           doigt — un controle qui n'apparait qu'au hover est inatteignable

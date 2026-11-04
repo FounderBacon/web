@@ -147,7 +147,12 @@
     "buildLoadout": "Build loadout",
     "seeAll": "See all",
     "whatsNew": "What's new",
-    "changelogLink": "Changelog"
+    "changelogLink": "Changelog",
+    "keyUpdates": "Key updates",
+    "viewsWeek": "{count} views · 7d",
+    "viewsWeekOne": "{count} view · 7d",
+    "compareCta": "Compare weapons",
+    "newBadge": "New"
   },
   "search": {
     "title": "Search Weapons",
@@ -223,6 +228,10 @@
   },
   "compare": {
     "title": "Weapon Compare",
+    "onlyDifferences": "Only differences",
+    "bestBadge": "Best",
+    "vsBest": "vs best",
+    "bestLabel": "best",
     "subtitle": "Stats side by side. Set each build on its weapon page.",
     "addColumn": "Add column",
     "share": "Share",

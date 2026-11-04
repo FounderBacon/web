@@ -133,7 +133,7 @@ export function CompareRadar({ columns, names, colors }: CompareRadarProps) {
                   <th key={si} className="overflow-hidden pb-1.5 pl-2 text-right font-medium">
                     <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
                       <span
-                        className="size-2 shrink-0 rounded-full"
+                        className="size-2 shrink-0"
                         style={{ backgroundColor: colors[si] ?? colors[0] }}
                         aria-hidden
                       />

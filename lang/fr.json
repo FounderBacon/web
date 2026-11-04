@@ -147,7 +147,12 @@
     "buildLoadout": "Créer un loadout",
     "seeAll": "Tout voir",
     "whatsNew": "Nouveautés",
-    "changelogLink": "Changelog"
+    "changelogLink": "Changelog",
+    "keyUpdates": "Mises à jour importantes",
+    "viewsWeek": "{count} vues · 7 j",
+    "viewsWeekOne": "{count} vue · 7 j",
+    "compareCta": "Comparer des armes",
+    "newBadge": "Nouveau"
   },
   "search": {
     "title": "Rechercher des armes",
@@ -223,6 +228,10 @@
   },
   "compare": {
     "title": "Comparateur d'armes",
+    "onlyDifferences": "Seulement les différences",
+    "bestBadge": "Meilleur",
+    "vsBest": "vs meilleur",
+    "bestLabel": "meilleur",
     "subtitle": "Les stats côte à côte. Règle chaque build sur la fiche de son arme.",
     "addColumn": "Ajouter une colonne",
     "share": "Partager",
