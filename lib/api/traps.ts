@@ -1,6 +1,6 @@
 import { api } from "./client"
 import type { PaginatedResponse, TrapSummary, TrapDetail, TrapQueryParams, TrapPlacement } from "@/lib/types/trap"
-import type { AppliedBonuses } from "@/lib/types/calculate"
+import type { AppliedBonuses, CalculateHeroParams } from "@/lib/types/calculate"
 import type { TrapGroupedSummary } from "@/lib/types/grouped"
 
 function toQueryString(params: Record<string, string | number | boolean | undefined>): string {
@@ -34,6 +34,7 @@ export interface TrapCalculateParams {
   level: number
   perkIds: string[]
   offensive: number
+  hero?: CalculateHeroParams
 }
 
 export interface TrapCalculatedStats {
@@ -72,6 +73,7 @@ export interface TrapCalculatedResponse {
   tier: string
   levelRange: { min: number; max: number }
   stats: TrapCalculatedStats
+  heroBonuses?: AppliedBonuses
 }
 
 export async function calculateTrapStats(slug: string, params: TrapCalculateParams): Promise<TrapCalculatedResponse> {

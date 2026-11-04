@@ -10,6 +10,8 @@ import type { TrapDetail } from "@/lib/types/trap";
 import type { TierData } from "@/lib/types/shared";
 import type { Perk } from "@/lib/types/weapon";
 import { splitPerkSlots } from "@/lib/perks";
+import { loadoutToApiPayload } from "@/lib/loadout/selectors";
+import { useLoadout } from "@/lib/loadout/store";
 import { SectionContainer } from "@/components/public/SectionContainer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TrapHeader } from "@/components/traps/TrapHeader";
@@ -51,6 +53,18 @@ export default function TrapPage() {
   const [statsLoading, setStatsLoading] = useState(false);
   const calcAbortRef = useRef<AbortController | null>(null);
   const trackCalcRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Loadout heros (commander + support + team) : perks applicables aux pieges
+  const loadoutCommander = useLoadout((s) => s.commander);
+  const loadoutSupport = useLoadout((s) => s.support);
+  const loadoutTeamPerks = useLoadout((s) => s.teamPerks);
+  const heroPayload = loadoutToApiPayload({
+    commander: loadoutCommander,
+    support: loadoutSupport,
+    teamPerks: loadoutTeamPerks,
+  });
+  // Serialise pour une dep stable (re-calc seulement quand le loadout change reellement)
+  const heroKey = JSON.stringify(heroPayload ?? null);
 
   useEffect(() => {
     async function load() {
@@ -128,8 +142,15 @@ export default function TrapPage() {
       perkIds: [],
     });
 
-    const modifiedReq = perkIds.length > 0
-      ? calculateTrapStats(params.slug, { tier, level, offensive, perkIds })
+    // Stats finales : avec heros et/ou perks (sinon = base)
+    const modifiedReq = perkIds.length > 0 || heroPayload
+      ? calculateTrapStats(params.slug, {
+          tier,
+          level,
+          offensive,
+          perkIds,
+          ...(heroPayload && { hero: heroPayload }),
+        })
       : null;
 
     Promise.all([baseReq, modifiedReq])
@@ -162,7 +183,8 @@ export default function TrapPage() {
       controller.abort();
       if (trackCalcRef.current) clearTimeout(trackCalcRef.current);
     };
-  }, [trap, tier, level, offensive, selectedPerks, params.slug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- heroPayload est represente par heroKey
+  }, [trap, tier, level, offensive, selectedPerks, params.slug, heroKey]);
 
   // Construction des query params (utilisee par sync URL + share + QR)
   const writeUrlParams = useCallback((url: URL) => {
